@@ -1,0 +1,505 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id          String   @id @default(cuid())
+  fullName    String
+  email       String   @unique
+  phoneNumber String?  @unique
+  password    String?  // Hashed with bcrypt - null if OAuth only
+  
+  // Profile
+  location    String?
+  profileImage String?
+  dateOfBirth DateTime? // For age verification
+  
+  // Verification status
+  emailVerified    DateTime?
+  phoneVerified    DateTime?
+  
+  // Two-Factor Authentication
+  twoFactorEnabled Boolean  @default(false)
+  twoFactorSecret  String?  // Encrypted TOTP secret
+  backupCodes      String[] // Encrypted backup codes
+  
+  // KYC & Compliance (for when you scale)
+  kycStatus        String   @default("pending") // "pending", "in_review", "verified", "rejected"
+  kycProvider      String?  // "stripe_identity", "persona", etc.
+  kycTier          String   @default("tier_1") // "tier_1", "tier_2", "tier_3"
+  kycSubmittedAt   DateTime?
+  kycVerifiedAt    DateTime?
+  kycRejectionReason String?
+
+   // Nigerian identity numbers (encrypted)
+  bvn              String?  @unique // Bank Verification Number
+  bvnVerified      Boolean  @default(false)
+  bvnVerifiedAt    DateTime?
+  
+  nin              String?  @unique // National Identity Number
+  ninVerified      Boolean  @default(false)
+  ninVerifiedAt    DateTime?
+  
+  // Account status
+  accountStatus    String   @default("active") // "active", "suspended", "closed"
+  suspendedAt      DateTime?
+  suspensionReason String?
+  
+  // Terms acceptance
+  acceptedTermsAt     DateTime?
+  acceptedTermsVersion String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  accounts         Account[]
+  sessions         Session[]
+  wallet           Wallet?
+  transactions     Transaction[]
+  baskets          Basket[]
+  paymentMethods   PaymentMethod[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+  complianceDocuments ComplianceDocument[]
+  
+  @@index([email])
+  @@index([phoneNumber])
+  @@index([kycStatus])
+  @@index([accountStatus])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String  // "oauth", "credentials"
+  provider          String  // "google", "apple", "credentials"
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  
+  // Security tracking
+  ipAddress    String?
+  userAgent    String?
+  country      String?  // Derived from IP for fraud detection
+  city         String?
+  deviceId     String?  // Device fingerprint
+  
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([expires])
+  @@index([sessionToken])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String   // email or phone
+  token      String   @unique
+  type       String   // "email_verification", "phone_verification", "password_reset", "2fa_setup"
+  expires    DateTime
+  createdAt  DateTime @default(now())
+  
+  @@unique([identifier, token, type])
+  @@index([expires])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// WALLET & TRANSACTIONS
+// ============================================
+
+model Wallet {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Balances
+  balance       Decimal  @db.Decimal(15, 2) @default(0)
+  totalDeposits Decimal  @db.Decimal(15, 2) @default(0)
+  totalSpent    Decimal  @db.Decimal(15, 2) @default(0)
+  
+  // Pending amounts (for holds/reversals)
+  pendingDeposits   Decimal @db.Decimal(15, 2) @default(0)
+  pendingWithdrawals Decimal @db.Decimal(15, 2) @default(0)
+  
+  // Wallet status
+  status        String   @default("active") // "active", "frozen", "closed"
+  frozenAt      DateTime?
+  frozenReason  String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  transactions  Transaction[]
+  
+  @@index([userId])
+  @@index([status])
+  @@map("wallets")
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  walletId    String
+  wallet      Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  
+  // Transaction details
+  type        TransactionType
+  amount      Decimal           @db.Decimal(15, 2)
+  fee         Decimal?          @db.Decimal(15, 2)
+  netAmount   Decimal           @db.Decimal(15, 2) // amount - fee
+  
+  description String
+  status      TransactionStatus @default(PENDING)
+  failureReason String?
+  
+  // Balance tracking (for audit trail)
+  balanceBefore Decimal         @db.Decimal(15, 2)
+  balanceAfter  Decimal         @db.Decimal(15, 2)
+  
+  // Related entities
+  basketId    String?
+  basket      Basket?           @relation(fields: [basketId], references: [id])
+  
+  paymentMethodId String?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  
+  // Payment processor details
+  processorTransactionId String? @unique // Paystack reference, Flutterwave tx_ref, etc.
+  processorFee          Decimal? @db.Decimal(15, 2)
+  processorResponse     Json?    // Full response from processor
+  
+  // Metadata
+  metadata    Json?             // Additional transaction data
+  
+  // Timestamps
+  initiatedAt DateTime          @default(now())
+  completedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  @@index([userId])
+  @@index([walletId])
+  @@index([basketId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@index([processorTransactionId])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  DEPOSIT              // User deposits money into wallet
+  WITHDRAWAL           // User withdraws from wallet
+  TRANSFER_TO_BASKET   // Move money from wallet to basket
+  TRANSFER_FROM_BASKET // Move money from basket back to wallet
+  MARKET_PURCHASE      // Purchase from marketplace
+  REFUND               // Refund to wallet
+  FEE                  // Platform fee
+  REVERSAL             // Transaction reversal
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REVERSED
+}
+
+// ============================================
+// BASKETS (Savings Goals)
+// ============================================
+
+model Basket {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Basket details
+  name            String
+  commodityType   String?       // "rice", "beans", "maize", etc.
+  image           String?       // URL to commodity image
+  description     String?       @db.Text
+  category        String        @default("Foodstuff")
+  
+  // Goal tracking
+  goalAmount      Decimal       @db.Decimal(15, 2)
+  currentAmount   Decimal       @db.Decimal(15, 2) @default(0)
+  targetDate      DateTime?     // Target deadline
+  
+  // Auto-save settings
+  autoSaveEnabled Boolean       @default(false)
+  autoSaveAmount  Decimal?      @db.Decimal(15, 2) // Amount to auto-transfer
+  autoSaveFrequency String?     // "daily", "weekly", "monthly"
+  nextAutoSaveAt  DateTime?
+  
+  regularTopUp    Decimal?      @db.Decimal(15, 2) // Suggested contribution
+  
+  // Status
+  status          BasketStatus  @default(ACTIVE)
+  
+  // Milestones
+  milestones      Json?         // Track progress milestones
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  completedAt     DateTime?     // When goal was reached
+  pausedAt        DateTime?
+  cancelledAt     DateTime?
+  
+  transactions    Transaction[]
+  
+  @@index([userId])
+  @@index([status])
+  @@index([nextAutoSaveAt])
+  @@map("baskets")
+}
+
+enum BasketStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+// ============================================
+// PAYMENT METHODS (For deposits into wallet)
+// ============================================
+
+model PaymentMethod {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type            String   // "card", "bank_transfer", "ussd", "mobile_money"
+  provider        String   // "paystack", "flutterwave", "stripe"
+  
+  // Card details (if applicable) - encrypted in app layer
+  cardBrand       String?  // "visa", "mastercard", "verve"
+  cardLast4       String?
+  cardExpMonth    Int?
+  cardExpYear     Int?
+  cardBin         String?  // First 6 digits for fraud detection
+  cardBank        String?  // Issuing bank
+  cardCountry     String?  // Card country
+  
+  // Authorization details
+  authorizationCode String? @unique // Paystack/Flutterwave auth code for recurring charges
+  signature        String?
+  
+  // Bank transfer details (if applicable)
+  bankName        String?
+  accountNumber   String?  // Virtual account number for bank transfers
+  
+  // Status
+  isPrimary       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  lastUsedAt      DateTime?
+  
+  transactions    Transaction[]
+  
+  @@index([userId])
+  @@index([authorizationCode])
+  @@map("payment_methods")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      String   // "transaction", "basket_milestone", "security_alert", "promotion", "auto_save"
+  title     String
+  message   String   @db.Text
+  link      String?  // Deep link to relevant page
+  
+  // Delivery channels
+  sentViaEmail Boolean @default(false)
+  sentViaSMS   Boolean @default(false)
+  sentViaPush  Boolean @default(false)
+  
+  // Status
+  read      Boolean  @default(false)
+  readAt    DateTime?
+  
+  // Metadata
+  metadata  Json?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId, read])
+  @@index([createdAt])
+  @@index([type])
+  @@map("notifications")
+}
+
+// ============================================
+// AUDIT & COMPLIANCE
+// ============================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?  // Null for system actions
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // Action details
+  action     String   // "login", "deposit", "withdrawal", "basket_create", "kyc_submit"
+  category   String   // "auth", "financial", "profile", "security"
+  severity   String   @default("info") // "info", "warning", "critical"
+  
+  // Context
+  ipAddress  String
+  userAgent  String?
+  country    String?
+  sessionId  String?
+  
+  // Request details
+  endpoint   String?  // API endpoint called
+  method     String?  // HTTP method
+  
+  // Details
+  description String
+  metadata    Json?    // Additional context
+  oldValue    Json?    // For update actions
+  newValue    Json?    // For update actions
+  
+  // Status
+  success     Boolean  @default(true)
+  errorMessage String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([category])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model ComplianceDocument {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type         String   // "id_card", "passport", "drivers_license", "proof_of_address", "bvn"
+  documentNumber String? // ID number, BVN, etc (encrypted)
+  
+  // File storage
+  fileUrl      String   // Encrypted storage URL (S3, Cloudinary, etc.)
+  fileName     String
+  fileSize     Int
+  mimeType     String
+  
+  // Verification
+  status       String   @default("pending") // "pending", "approved", "rejected"
+  reviewedAt   DateTime?
+  reviewedBy   String?  // Admin user ID
+  rejectionReason String?
+  
+  // Metadata
+  extractedData Json?   // Data extracted from document (AI/OCR)
+  
+  uploadedAt   DateTime @default(now())
+  expiresAt    DateTime? // For documents with expiry
+  
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@map("compliance_documents")
+}
+
+model RateLimitLog {
+  id         String   @id @default(cuid())
+  identifier String   // userId, IP, or API key
+  action     String   // "api_call", "login_attempt", "withdrawal", "deposit"
+  endpoint   String?  // Specific endpoint
+  
+  count      Int      @default(1)
+  windowStart DateTime
+  windowEnd   DateTime
+  
+  blocked    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  
+  @@index([identifier, action, windowStart])
+  @@index([createdAt])
+  @@map("rate_limit_logs")
+}
+
+// ============================================
+// SECURITY EVENTS
+// ============================================
+
+model SecurityEvent {
+  id          String   @id @default(cuid())
+  userId      String?
+  
+  eventType   String   // "failed_login", "password_change", "2fa_enabled", "suspicious_activity", "unusual_deposit"
+  severity    String   // "low", "medium", "high", "critical"
+  
+  ipAddress   String
+  userAgent   String?
+  country     String?
+  
+  description String
+  metadata    Json?
+  
+  // Response
+  blocked     Boolean  @default(false)
+  notified    Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("security_events")
+}

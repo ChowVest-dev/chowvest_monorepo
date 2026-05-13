@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd ../.. && pnpm --filter chowvest-prod build",
+  "installCommand": "cd ../.. && pnpm install",
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/cron/cleanup-transactions",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

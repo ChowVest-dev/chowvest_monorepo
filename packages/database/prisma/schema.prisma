@@ -1,0 +1,751 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id          String  @id @default(cuid())
+  fullName    String
+  email       String  @unique
+  phoneNumber String? @unique
+  password    String? // Hashed with bcrypt - null if OAuth only
+
+  // Profile
+  location     String?
+  profileImage String?
+  dateOfBirth  DateTime? // For age verification
+
+  // Verification status
+  emailVerified Boolean   @default(false)
+  phoneVerified DateTime?
+
+  // Account status
+  accountStatus    String    @default("active") // "active", "suspended", "closed"
+  suspendedAt      DateTime?
+  suspensionReason String?
+
+  // Onboarding
+  hasCompletedOnboarding Boolean @default(false)
+
+  // Terms acceptance
+  acceptedTermsAt      DateTime?
+  acceptedTermsVersion String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  accounts          Account[]
+  sessions          Session[]
+  wallet            Wallet?
+  transactions      Transaction[]
+  baskets           Basket[]
+  paymentMethods    PaymentMethod[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  basketOrders      BasketOrder[]
+  marketplaceOrders MarketplaceOrder[]
+  deliveries        Delivery[]
+
+  @@index([email])
+  @@index([phoneNumber])
+  @@index([accountStatus])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String // "oauth", "credentials"
+  provider          String // "google", "apple", "credentials"
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  // Security tracking
+  ipAddress String?
+  userAgent String?
+  country   String? // Derived from IP for fraud detection
+  city      String?
+  deviceId  String? // Device fingerprint
+
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires])
+  @@index([sessionToken])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String // email or phone
+  token      String   @unique
+  type       String // "email_verification", "phone_verification", "password_reset", "2fa_setup"
+  expires    DateTime
+  attempts   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@unique([identifier, token, type])
+  @@index([expires])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// WALLET & TRANSACTIONS
+// ============================================
+
+model Wallet {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Balances
+  balance       Decimal @default(0) @db.Decimal(15, 2)
+  totalDeposits Decimal @default(0) @db.Decimal(15, 2)
+  totalSpent    Decimal @default(0) @db.Decimal(15, 2)
+
+  // Pending amounts (for holds/reversals)
+  pendingDeposits Decimal @default(0) @db.Decimal(15, 2)
+
+  // Wallet status
+  status       String    @default("active") // "active", "frozen", "closed"
+  frozenAt     DateTime?
+  frozenReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("wallets")
+}
+
+model Transaction {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  walletId String
+  wallet   Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  // Transaction details
+  type      TransactionType
+  amount    Decimal         @db.Decimal(18, 2)
+  fee       Decimal?        @db.Decimal(18, 2)
+  netAmount Decimal         @db.Decimal(18, 2) // amount - fee
+
+  description   String
+  status        TransactionStatus @default(PENDING)
+  failureReason String?
+
+  // Balance tracking (for audit trail)
+  balanceBefore Decimal @db.Decimal(15, 2)
+  balanceAfter  Decimal @db.Decimal(15, 2)
+
+  // Related entities
+  basketId String?
+  basket   Basket? @relation(fields: [basketId], references: [id])
+
+  paymentMethodId String?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+
+  // Payment processor details
+  processorTransactionId String?  @unique // Paystack reference, Flutterwave tx_ref, etc.
+  processorFee           Decimal? @db.Decimal(15, 2)
+  processorResponse      Json? // Full response from processor
+
+  // Metadata & Flags
+  isFlagged Boolean @default(false)
+  metadata  Json?   // Additional transaction data
+
+  // Timestamps
+  initiatedAt DateTime  @default(now())
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([walletId])
+  @@index([basketId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@index([processorTransactionId])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  DEPOSIT // User deposits money into wallet
+  TRANSFER_TO_BASKET // Move money from wallet to basket
+  TRANSFER_FROM_BASKET // Move money from basket back to wallet
+  MARKET_PURCHASE // Purchase from marketplace
+  REFUND // Refund to wallet
+  CANCELLATION_FEE // Penalty fee for early goal cancellation
+  SERVICE_FEE // Platform service fee
+  REVERSAL // Transaction reversal
+  DELIVERY_FEE // Delivery fee
+  CREDIT_USER // Credit user during increase or decrease of market price
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REVERSED
+}
+
+// ============================================
+// BASKETS (Savings Goals)
+// ============================================
+
+model Basket {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Basket details
+  name          String
+  commodityType String? // "rice", "beans", "maize", etc.
+  image         String? // URL to commodity image
+  description   String? @db.Text
+  category      String  @default("Foodstuff")
+
+  // Goal tracking
+  goalAmount    Decimal   @db.Decimal(15, 2)
+  currentAmount Decimal   @default(0) @db.Decimal(15, 2)
+  targetDate    DateTime? // Target deadline
+
+  // Auto-save settings
+  autoSaveEnabled   Boolean   @default(false)
+  autoSaveAmount    Decimal?  @db.Decimal(15, 2) // Amount to auto-transfer
+  autoSaveFrequency String? // "daily", "weekly", "monthly"
+  nextAutoSaveAt    DateTime?
+
+  regularTopUp Decimal? @db.Decimal(15, 2) // Suggested contribution
+
+  // Status
+  status BasketStatus @default(ACTIVE)
+
+  // Milestones
+  milestones Json? // Track progress milestones
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime? // When goal was reached
+  pausedAt    DateTime?
+  cancelledAt DateTime?
+
+  transactions Transaction[]
+  basketOrders BasketOrder[]
+  deliveries   Delivery[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([nextAutoSaveAt])
+  @@map("baskets")
+}
+
+enum BasketStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+// ============================================
+// BASKET ORDERS
+// ============================================
+model BasketOrder {
+  id          String    @id @default(cuid())
+  basketId    String
+  userId      String
+  commodityId String
+  quantity    Int
+  status      String    @default("PENDING") // PENDING, FULFILLED, CANCELLED
+  requestedAt DateTime  @default(now())
+  deliveredAt DateTime?
+
+  basket    Basket    @relation(fields: [basketId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commodity Commodity @relation(fields: [commodityId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([basketId])
+  @@map("basket_orders")
+}
+
+// ============================================
+// COMMODITIES
+// ============================================
+model Commodity {
+  id String @id @default(cuid())
+
+  // SKU & identity
+  sku      String  @unique
+  name     String
+  category String // "Rice", "Oil", "Beans"
+  brand    String?
+  price    Decimal @db.Decimal(15, 2)
+
+  // Attributes
+  unit        String // "kg", "litre", "bag"
+  size        Decimal @db.Decimal(10, 2) // 5, 10, 25 etc
+  image       String?
+  description String? @db.Text
+
+  // Market placement: "SAVINGS", "MARKETPLACE", "BOTH"
+  marketType String @default("SAVINGS")
+
+  // Status
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  basketOrders          BasketOrder[]
+  marketplaceOrderItems MarketplaceOrderItem[]
+
+  @@index([category])
+  @@index([sku])
+  @@index([marketType])
+  @@map("commodities")
+}
+
+
+// ============================================
+// ORDERS
+// ============================================ 
+model MarketplaceOrder {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status           String  @default("PENDING") // pending, fulfilled, cancelled
+  total            Decimal @db.Decimal(15, 2)
+  deliveryLocation String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items MarketplaceOrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("marketplace_orders")
+}
+
+// ============================================
+// ORDER ITEMS
+// ============================================ 
+model MarketplaceOrderItem {
+  id String @id @default(cuid())
+
+  orderId     String
+  commodityId String
+
+  quantity Int
+  price    Decimal @db.Decimal(15, 2)
+
+  order     MarketplaceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  commodity Commodity        @relation(fields: [commodityId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([commodityId])
+  @@map("marketplace_order_items")
+}
+
+// ============================================
+// DELIVERIES
+// ============================================ 
+model Delivery {
+  id           String @id @default(cuid())
+  userId       String
+  deliveryType String // "BASKET", "MARKETPLACE"
+  orderId      String
+
+  // Status flow: PENDING → CONFIRMED → PREPARING → IN_TRANSIT → DELIVERED | CANCELLED
+  status String @default("PENDING")
+
+  // Address
+  address      String
+  addressLabel String? // "Home", "Office", etc.
+  deliveryNote String? // "Call me when you arrive"
+
+  // Delivery option & fees
+  deliveryOption String  @default("STANDARD") // "EXPRESS", "STANDARD", "SCHEDULED"
+  deliveryFee    Decimal @default(0) @db.Decimal(15, 2)
+  serviceFee     Decimal @default(0) @db.Decimal(15, 2)
+
+  // Rider info (simulated)
+  courierInfo Json?
+  riderName   String?
+  riderPhone  String?
+  riderRating Float?
+
+  // Timing
+  estimatedAt  DateTime? // Estimated delivery time
+  confirmedAt  DateTime?
+  preparingAt  DateTime?
+  requestedAt  DateTime  @default(now())
+  dispatchedAt DateTime?
+  arrivedAt    DateTime?
+  deliveredAt  DateTime?
+
+  // Post-delivery feedback
+  userRating Int?     // 1-5 stars
+  userTip    Decimal? @db.Decimal(15, 2)
+
+  // Basket relation
+  basketId String?
+  basket   Basket? @relation(fields: [basketId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Logistics & Rider tracking
+  riderId            String?
+  rider              Rider?            @relation(fields: [riderId], references: [id])
+  logisticsCompanyId String?
+  logisticsCompany   LogisticsCompany? @relation(fields: [logisticsCompanyId], references: [id])
+  
+  deliveryPin        String? // 4-digit PIN for handshake
+  lat                Decimal? @db.Decimal(10, 8)
+  lng                Decimal? @db.Decimal(11, 8)
+
+  @@index([userId])
+  @@index([status])
+  @@index([deliveryType])
+  @@index([basketId])
+  @@map("deliveries")
+}
+
+// ============================================
+// PAYMENT METHODS (For deposits into wallet)
+// ============================================
+
+model PaymentMethod {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type     String // "card", "bank_transfer", "ussd", "mobile_money"
+  provider String // "paystack", "flutterwave", "stripe"
+
+  // Card details (if applicable) - encrypted in app layer
+  cardBrand    String? // "visa", "mastercard", "verve"
+  cardLast4    String?
+  cardExpMonth Int?
+  cardExpYear  Int?
+  cardBin      String? // First 6 digits for fraud detection
+  cardBank     String? // Issuing bank
+  cardCountry  String? // Card country
+
+  // Authorization details
+  authorizationCode String? @unique // Paystack/Flutterwave auth code for recurring charges
+  signature         String?
+
+  // Bank transfer details (if applicable)
+  bankName      String?
+  accountNumber String? // Virtual account number for bank transfers
+
+  // Status
+  isPrimary Boolean @default(false)
+  isActive  Boolean @default(true)
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  lastUsedAt DateTime?
+
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([authorizationCode])
+  @@map("payment_methods")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    String // "transaction", "basket_milestone", "security_alert", "promotion", "auto_save"
+  title   String
+  message String  @db.Text
+  link    String? // Deep link to relevant page
+
+  // Delivery channels
+  sentViaEmail Boolean @default(false)
+  sentViaSMS   Boolean @default(false)
+  sentViaPush  Boolean @default(false)
+
+  // Status
+  read   Boolean   @default(false)
+  readAt DateTime?
+
+  // Metadata
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+  @@index([type])
+  @@map("notifications")
+}
+
+// ============================================
+// AUDIT & COMPLIANCE
+// ============================================
+
+model AuditLog {
+  id     String  @id @default(cuid())
+  userId String? // Null for system actions
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Action details
+  action   String // "login", "deposit", "withdrawal", "basket_create", "kyc_submit"
+  category String // "auth", "financial", "profile", "security"
+  severity String @default("info") // "info", "warning", "critical"
+
+  // Context
+  ipAddress String
+  userAgent String?
+  country   String?
+  sessionId String?
+
+  // Request details
+  endpoint String? // API endpoint called
+  method   String? // HTTP method
+
+  // Details
+  description String
+  metadata    Json? // Additional context
+  oldValue    Json? // For update actions
+  newValue    Json? // For update actions
+
+  // Status
+  success      Boolean @default(true)
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([category])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model RateLimitLog {
+  id         String  @id @default(cuid())
+  identifier String // userId, IP, or API key
+  action     String // "api_call", "login_attempt", "withdrawal", "deposit"
+  endpoint   String? // Specific endpoint
+
+  count       Int      @default(1)
+  windowStart DateTime
+  windowEnd   DateTime
+
+  blocked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([identifier, action, windowStart])
+  @@index([createdAt])
+  @@map("rate_limit_logs")
+}
+
+// ============================================
+// SECURITY EVENTS
+// ============================================
+
+model SecurityEvent {
+  id     String  @id @default(cuid())
+  userId String?
+
+  eventType String // "failed_login", "password_change", "2fa_enabled", "suspicious_activity", "unusual_deposit"
+  severity  String // "low", "medium", "high", "critical"
+
+  ipAddress String
+  userAgent String?
+  country   String?
+
+  description String
+  metadata    Json?
+
+  // Response
+  blocked  Boolean @default(false)
+  notified Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("security_events")
+}
+
+// ============================================
+// PROCESSED WEBHOOKS (Idempotency)
+// ============================================
+
+model ProcessedWebhook {
+  id        String   @id @default(cuid())
+  eventId   String   @unique // Paystack event ID - unique constraint prevents duplicates
+  eventType String   // "charge.success", "refund.processed", etc.
+  reference String?  // Payment reference for cross-referencing
+  payload   Json?    // Store the event payload for debugging
+
+  processedAt DateTime @default(now())
+
+  @@index([reference])
+  @@index([processedAt])
+  @@map("processed_webhooks")
+}
+
+// ============================================
+// ADMIN ACCOUNTS
+// ============================================
+
+model Admin {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  fullName      String
+  role          String    @default("ADMIN") // e.g., "SUPER_ADMIN", "ADMIN"
+  
+  // Verification & Status
+  emailVerified DateTime?
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      AdminSession[]
+
+  @@index([email])
+  @@index([role])
+  @@map("admins")
+}
+
+model AdminSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  adminId      String
+  expires      DateTime
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([expires])
+  @@map("admin_sessions")
+}
+
+// ============================================
+// PLATFORM CONFIG (editable admin settings)
+// ============================================
+
+model PlatformConfig {
+  key       String   @id // e.g. "DELIVERY_FEE_EXPRESS", "SERVICE_FEE"
+  value     String        // stored as string, cast to number at runtime
+  label     String        // Human readable label shown in admin UI
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_config")
+}
+
+// ============================================
+// LOGISTICS & RIDERS
+// ============================================
+
+model LogisticsCompany {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phoneNumber String
+  password    String   // Hashed password for the logistics admin
+
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  riders      Rider[]
+  deliveries  Delivery[]
+
+  @@map("logistics_companies")
+}
+
+model Rider {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     LogisticsCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  fullName    String
+  phoneNumber String   @unique
+  loginPin    String   // Hashed 4-digit PIN for login
+  
+  status      String   @default("OFFLINE") // "OFFLINE", "ONLINE", "ON_DELIVERY"
+  isActive    Boolean  @default(true) // If the company disables them
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  deliveries  Delivery[]
+
+  @@index([companyId])
+  @@index([phoneNumber])
+  @@map("riders")
+}

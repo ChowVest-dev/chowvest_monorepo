@@ -1,0 +1,17 @@
+{
+  "name": "chowvest-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "postinstall": "pnpm --filter @chowvest/database generate"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.4",
+    "typescript": "^6.0.2",
+    "prisma": "^7.6.0"
+  },
+  "packageManager": "pnpm@10.33.0"
+}
