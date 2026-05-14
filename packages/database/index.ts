@@ -8,9 +8,7 @@ const connectionString = process.env.DATABASE_URL!;
 
 const poolConfig = {
   connectionString,
-  ssl: process.env.NODE_ENV === "production"
-    ? { rejectUnauthorized: true }
-    : { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: false },
   max: process.env.NODE_ENV === "production" ? 3 : 5,
   min: 0,
   idleTimeoutMillis: 10000,
