@@ -1,4 +1,4 @@
-import prisma from "../lib/db";
+import { prisma } from "@chowvest/database"
 
 async function main() {
   const txs = await prisma.transaction.findMany({
