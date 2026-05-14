@@ -1,4 +1,4 @@
-import prisma from "../lib/db";
+import { prisma } from "@chowvest/database"
 
 async function main() {
   console.log("Renaming historical combined fees to DELIVERY_FEE...");

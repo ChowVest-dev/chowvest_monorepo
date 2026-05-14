@@ -10,4 +10,124 @@
 
 [33m[1m⚠[22m[39m The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
 [37m[1m [22m[39m Creating an optimized production build ...
-[41m[30m ELIFECYCLE [39m[49m [31mCommand failed with exit code 130.[39m
+Turbopack build encountered 1 warnings:
+[externals]/@prisma/client
+unexpected export *
+export * used with module [externals]/@prisma/client [external] (@prisma/client, cjs, [project]/node_modules/.pnpm/@prisma+client@7.6.0_prisma@7.6.0_@types+react-dom@19.2.3_@types+react@19.2.14__@types+_3caf3bccbff905c41e128f7f76fd301f/node_modules/@prisma/client) which is a CommonJS module with exports only available at runtime
+List all export names manually (`export [35m{ a, b, c }[39m from "...") or rewrite the module to ESM, to avoid the additional runtime code.`
+
+Import trace:
+  external:
+    [externals]/@prisma/client [external]
+    ./apps/web/app/api/wallet/webhook/route.ts [App Route]
+
+
+[32m[1m✓[22m[39m Compiled successfully in 20.4s
+[?25l[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m.[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m..[39m[2K[1G[37m[1m [22m[39m Running next.config.js provided runAfterProductionCompile  [36m...[39m[2K[1G[?25h[32m[1m✓[22m[39m Completed runAfterProductionCompile in 19.0s
+[?25l [36m.[39m [2K[1G[?25h[?25l[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m..[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m...[39m[2K[1G[37m[1m [22m[39m Running TypeScript  [36m.[39m[2K[1G[?25h[?25l[37m[1m [22m[39m Finished TypeScript in 17.1s  [36m.[39m[2K[1G[?25h[37m[1m [22m[39m Finished TypeScript in 17.1s    [32m[1m✓[22m[39m Finished TypeScript in 17.1s 
+[?25l[37m[1m [22m[39m Collecting page data using 7 workers  [36m.[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m..[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m...[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m.[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m..[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m...[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m.[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m..[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m...[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m.[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m..[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m...[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m.[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m..[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m...[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m.[39m[2K[1G[37m[1m [22m[39m Collecting page data using 7 workers  [36m..[39m[2K[1G[?25h[37m[1m [22m[39m Collecting page data using 7 workers in 3.3s    [32m[1m✓[22m[39m Collecting page data using 7 workers in 3.3s 
+[?25l[37m[1m [22m[39m Generating static pages using 7 workers (0/37)  [36m[    ][39m[2K[1G[37m[1m [22m[39m Generating static pages using 7 workers (12/37)  [36m[=   ][39m[2K[1G[37m[1m [22m[39m Generating static pages using 7 workers (12/37)  [36m[==  ][39m[2K[1G[37m[1m [22m[39m Generating static pages using 7 workers (26/37)  [36m[=== ][39m[2K[1G[?25hError getting session: Error: Dynamic server usage: Route /dashboard couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at y (.next/server/chunks/ssr/_0jfoqei._.js:2:35127)
+    at n (.next/server/chunks/ssr/_0jfoqei._.js:5:8957)
+    at c (.next/server/chunks/ssr/_0jfoqei._.js:5:22336)
+    at h (.next/server/chunks/ssr/_0jfoqei._.js:5:39973)
+    at p (.next/server/chunks/ssr/[root-of-the-server]__0-a55l3._.js:3:545)
+    at stringify (<anonymous>) {
+  description: [32m"Route /dashboard couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error"[39m,
+  digest: [32m'DYNAMIC_SERVER_USAGE'[39m
+}
+Error getting session: Error: Dynamic server usage: Route /deliveries couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at y (.next/server/chunks/ssr/_0jfoqei._.js:2:35127)
+    at n (.next/server/chunks/ssr/_0jfoqei._.js:5:8957)
+    at c (.next/server/chunks/ssr/_0jfoqei._.js:5:22336)
+    at h (.next/server/chunks/ssr/_0jfoqei._.js:5:39973)
+    at m (.next/server/chunks/ssr/[root-of-the-server]__0yoe29n._.js:2:4664)
+    at stringify (<anonymous>) {
+  description: [32m"Route /deliveries couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error"[39m,
+  digest: [32m'DYNAMIC_SERVER_USAGE'[39m
+}
+Error getting session: Error: Dynamic server usage: Route /basket-goals couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at y (.next/server/chunks/ssr/_0jfoqei._.js:2:35127)
+    at n (.next/server/chunks/ssr/_0jfoqei._.js:5:8957)
+    at c (.next/server/chunks/ssr/_0jfoqei._.js:5:22336)
+    at h (.next/server/chunks/ssr/_0jfoqei._.js:5:39973)
+    at n (.next/server/chunks/ssr/[root-of-the-server]__07f_8ur._.js:2:3754)
+    at stringify (<anonymous>) {
+  description: [32m"Route /basket-goals couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error"[39m,
+  digest: [32m'DYNAMIC_SERVER_USAGE'[39m
+}
+Error getting session: Error: Dynamic server usage: Route /profile couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at y (.next/server/chunks/ssr/_0jfoqei._.js:2:35127)
+    at n (.next/server/chunks/ssr/_0jfoqei._.js:5:8957)
+    at c (.next/server/chunks/ssr/_0jfoqei._.js:5:22336)
+    at h (.next/server/chunks/ssr/_0jfoqei._.js:5:39973)
+    at n (.next/server/chunks/ssr/[root-of-the-server]__13ri36t._.js:2:3648)
+    at stringify (<anonymous>) {
+  description: [32m"Route /profile couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error"[39m,
+  digest: [32m'DYNAMIC_SERVER_USAGE'[39m
+}
+Error getting session: Error: Dynamic server usage: Route /wallet couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at y (.next/server/chunks/ssr/_0jfoqei._.js:2:35127)
+    at n (.next/server/chunks/ssr/_0jfoqei._.js:5:8957)
+    at c (.next/server/chunks/ssr/_0jfoqei._.js:5:22336)
+    at h (.next/server/chunks/ssr/_0jfoqei._.js:5:39973)
+    at m (.next/server/chunks/ssr/[root-of-the-server]__0_qxx0f._.js:2:2758)
+    at stringify (<anonymous>) {
+  description: [32m"Route /wallet couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error"[39m,
+  digest: [32m'DYNAMIC_SERVER_USAGE'[39m
+}
+[?25h[32m[1m✓[22m[39m Generating static pages using 7 workers (37/37) in 966ms
+[?25l[37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G[?25h[37m[1m [22m[39m Finalizing page optimization in 37ms    [32m[1m✓[22m[39m Finalizing page optimization in 37ms 
+
+[4mRoute (app)[24m
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/auth/current
+├ ƒ /api/auth/forgot-password
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/register
+├ ƒ /api/auth/resend-otp
+├ ƒ /api/auth/reset-password
+├ ƒ /api/auth/session
+├ ƒ /api/auth/verify-email
+├ ƒ /api/baskets
+├ ƒ /api/baskets/[id]
+├ ƒ /api/baskets/[id]/add-funds
+├ ƒ /api/baskets/[id]/cancel
+├ ƒ /api/commodities
+├ ƒ /api/cron/cleanup-transactions
+├ ○ /api/delivery
+├ ƒ /api/delivery/[id]/rate
+├ ƒ /api/delivery/request
+├ ƒ /api/delivery/status
+├ ƒ /api/maintenance/status
+├ ƒ /api/notifications
+├ ƒ /api/onboarding/chat
+├ ƒ /api/payment-methods
+├ ƒ /api/ping
+├ ƒ /api/user/onboarding
+├ ƒ /api/wallet
+├ ƒ /api/wallet/deposit
+├ ƒ /api/wallet/transfer
+├ ƒ /api/wallet/verify-payment
+├ ƒ /api/wallet/webhook
+├ ○ /auth
+├ ○ /auth/forgot-password
+├ ○ /auth/reset-password
+├ ƒ /basket-goals
+├ ƒ /basket-goals/delivery/[basketId]
+├ ƒ /dashboard
+├ ƒ /deliveries
+├ ○ /maintenance
+├ ○ /market
+├ ƒ /profile
+└ ƒ /wallet
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+[?25h

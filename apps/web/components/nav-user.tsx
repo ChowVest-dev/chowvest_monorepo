@@ -98,7 +98,9 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => {
-              import("@/app/admin/actions").then(m => m.logoutAdmin());
+              fetch("/api/auth/logout", { method: "POST" }).then(() => {
+                window.location.href = "/auth";
+              });
             }}>
               <LogOut />
               Log out
