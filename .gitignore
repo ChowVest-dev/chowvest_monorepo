@@ -48,3 +48,10 @@ next-env.d.ts
 .next/
 */.next/
 apps/*/.next/
+
+
+.turbo
+apps/admin/.turbo
+apps/web/.turbo
+apps/rider/.turbo
+

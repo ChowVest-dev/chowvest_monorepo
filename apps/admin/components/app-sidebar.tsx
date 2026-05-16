@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import {
   Bot,
   GalleryVerticalEnd,
@@ -27,15 +27,11 @@ import {
 
 export function AppSidebar({ admin, ...props }: React.ComponentProps<typeof Sidebar> & { admin?: any }) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-
   const adminUser = {
     name: admin?.name || "Admin",
     email: admin?.email || "admin@chowvest.com",
     avatar: "",
   }
-
-  const currentUrl = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "")
 
   const navItems = [
     {
