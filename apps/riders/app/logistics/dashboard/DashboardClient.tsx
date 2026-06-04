@@ -162,7 +162,14 @@ export default function DashboardClient({ company, riders, pendingDeliveries, on
                        <p className="text-xs text-muted-foreground flex items-center gap-2">
                          <MapPin className="w-3 h-3" /> {delivery.address}
                        </p>
-                       <AssignRiderDialog deliveryId={delivery.id} riders={riders} />
+                       {delivery.riderId ? (
+                         <Button size="sm" variant="outline" disabled className="w-full text-amber-600 border-amber-200 bg-amber-50">
+                           <Clock className="w-4 h-4 mr-2" />
+                           Waiting for rider confirmation...
+                         </Button>
+                       ) : (
+                         <AssignRiderDialog deliveryId={delivery.id} riders={riders} />
+                       )}
                     </CardContent>
                   </Card>
                 )) : (

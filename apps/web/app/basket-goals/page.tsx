@@ -49,6 +49,8 @@ export default async function BasketGoalsPage() {
     regularTopUp: Number(basket.regularTopUp || 0),
     category: basket.category,
     status: basket.status,
+    lockedPrice: Number(basket.lockedPrice),
+    pausedAt: basket.pausedAt?.toISOString() || null,
     createdAt: basket.createdAt.toISOString(),
     deliveries: basket.deliveries.map(d => ({
       ...d,

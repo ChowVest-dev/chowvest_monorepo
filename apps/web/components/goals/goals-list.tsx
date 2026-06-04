@@ -3,7 +3,7 @@
 import { Card } from "@chowvest/ui";
 import { Progress } from "@chowvest/ui";
 import { Button } from "@chowvest/ui";
-import { Plus, MoreVertical, AlertCircle, Wallet } from "lucide-react";
+import { Plus, MoreVertical, AlertCircle, Wallet, TrendingUp, TrendingDown, Minus, CalendarDays } from "lucide-react";
 import { BouncingDots } from "@chowvest/ui";
 import { Badge } from "@chowvest/ui";
 import { format } from "date-fns";
@@ -36,11 +36,25 @@ interface Basket {
   image: string | null;
   goalAmount: number;
   currentAmount: number;
+  lockedPrice: number;
+  commodityCurrentPrice?: number | null;
   description: string | null;
   targetDate: string | null;
+  pausedAt: string | null;
   regularTopUp: number | null;
   category: string;
   status: string;
+}
+
+type PriceCase = "UP" | "SAME" | "DOWN_ENOUGH" | "DOWN_NOT_ENOUGH";
+
+function getPriceCase(basket: Basket): PriceCase {
+  const current = basket.commodityCurrentPrice ?? basket.lockedPrice;
+  const locked = basket.lockedPrice;
+  if (current > locked) return "UP";
+  if (current === locked) return "SAME";
+  if (basket.currentAmount >= current) return "DOWN_ENOUGH";
+  return "DOWN_NOT_ENOUGH";
 }
 
 interface GoalsListProps {
@@ -59,25 +73,22 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [insufficientBalance, setInsufficientBalance] = useState(false);
-  const [tab, setTab] = useState<"NEW" | "COMPLETED" | "CANCELLED">("NEW");
+  const [tab, setTab] = useState<"NEW" | "PAUSED" | "COMPLETED" | "CANCELLED">("NEW");
+  const [goalToContinue, setGoalToContinue] = useState<Basket | null>(null);
+  const [continueDate, setContinueDate] = useState("");
+  const [continueLoading, setContinueLoading] = useState(false);
 
-  const visibleBaskets = baskets.filter(
-    (b: any) => {
-      const isNotDelivered = !b.deliveries || b.deliveries.filter((d: any) => d.status !== "CANCELLED").length === 0;
-      const isReached = b.currentAmount >= b.goalAmount;
+  const visibleBaskets = baskets.filter((b: any) => {
+    const isNotDelivered = !b.deliveries || b.deliveries.filter((d: any) => d.status !== "CANCELLED").length === 0;
+    const isReached = b.currentAmount >= b.goalAmount;
+    if (tab === "NEW") return b.status === "ACTIVE" && !isReached && isNotDelivered;
+    if (tab === "PAUSED") return b.status === "PAUSED";
+    if (tab === "COMPLETED") return (b.status === "COMPLETED" || (b.status === "ACTIVE" && isReached)) && isNotDelivered;
+    if (tab === "CANCELLED") return b.status === "CANCELLED" || b.status === "EXPIRED";
+    return false;
+  });
 
-      if (tab === "NEW") {
-        return b.status === "ACTIVE" && !isReached && isNotDelivered;
-      }
-      if (tab === "COMPLETED") {
-        return (b.status === "COMPLETED" || (b.status === "ACTIVE" && isReached)) && isNotDelivered;
-      }
-      if (tab === "CANCELLED") {
-        return b.status === "CANCELLED";
-      }
-      return false;
-    }
-  );
+  const pausedCount = baskets.filter((b: any) => b.status === "PAUSED").length;
 
   const handleAddFunds = (basketId: string) => {
     setSelectedBasket(basketId);
@@ -138,6 +149,54 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
     router.push(`/basket-goals/delivery/${basketId}`);
   };
 
+  const handleContinueGoal = async () => {
+    if (!goalToContinue) return;
+    const priceCase = getPriceCase(goalToContinue);
+
+    // DOWN_ENOUGH auto-completes without a date
+    if (priceCase !== "DOWN_ENOUGH" && !continueDate) {
+      toast.error("Please select a new target date");
+      return;
+    }
+
+    try {
+      setContinueLoading(true);
+      const res = await axios.post(`/api/baskets/${goalToContinue.id}/continue`, {
+        targetDate: continueDate || undefined,
+      });
+
+      const outcome = res.data.outcome;
+      if (outcome === "completed") {
+        toast.success(res.data.message);
+      } else {
+        toast.success("Goal resumed! Keep saving.");
+      }
+
+      setGoalToContinue(null);
+      setContinueDate("");
+      if (onUpdate) onUpdate();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to continue goal");
+    } finally {
+      setContinueLoading(false);
+    }
+  };
+
+  const handleExpireGoal = async () => {
+    if (!goalToContinue) return;
+    try {
+      setContinueLoading(true);
+      const res = await axios.post(`/api/baskets/${goalToContinue.id}/expire`);
+      toast.success(res.data.message);
+      setGoalToContinue(null);
+      if (onUpdate) onUpdate();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to close goal");
+    } finally {
+      setContinueLoading(false);
+    }
+  };
+
   const confirmAddFunds = async () => {
     if (!selectedBasket || !amount || parseFloat(amount) < 500) {
       toast.error("Minimum deposit amount is ₦500");
@@ -188,37 +247,32 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
   return (
     <div className="space-y-6" data-onboarding-id="goals-list">
       {/* Tabs */}
-      <div className="flex bg-muted/30 p-1 w-full max-w-md rounded-[10px] border border-border">
-        <button
-          onClick={() => setTab("NEW")}
-          className={`flex-1 py-1.5 text-sm font-bold rounded-[8px] transition-all flex items-center justify-center gap-2 ${
-            tab === "NEW"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          }`}
-        >
-          Active
-        </button>
-        <button
-          onClick={() => setTab("COMPLETED")}
-          className={`flex-1 py-1.5 text-sm font-bold rounded-[8px] transition-all flex items-center justify-center gap-2 ${
-            tab === "COMPLETED"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          }`}
-        >
-          Completed
-        </button>
-        <button
-          onClick={() => setTab("CANCELLED")}
-          className={`flex-1 py-1.5 text-sm font-bold rounded-[8px] transition-all ${
-            tab === "CANCELLED"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          }`}
-        >
-          Cancelled
-        </button>
+      <div className="flex bg-muted/30 p-1 w-full rounded-[10px] border border-border">
+        {(["NEW", "PAUSED", "COMPLETED", "CANCELLED"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 py-1.5 text-sm font-bold rounded-[8px] transition-all flex items-center justify-center gap-1.5 ${
+              tab === t
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            }`}
+          >
+            {t === "NEW" && "Active"}
+            {t === "PAUSED" && (
+              <>
+                Paused
+                {pausedCount > 0 && (
+                  <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                    {pausedCount}
+                  </span>
+                )}
+              </>
+            )}
+            {t === "COMPLETED" && "Completed"}
+            {t === "CANCELLED" && "Closed"}
+          </button>
+        ))}
       </div>
 
       {visibleBaskets.length === 0 ? (
@@ -237,6 +291,8 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
         <div className="space-y-4">
         {visibleBaskets.map((goal, i) => {
           const isCancelled = goal.status === "CANCELLED";
+          const isExpired = goal.status === "EXPIRED";
+          const isPaused = goal.status === "PAUSED";
           const progress = (goal.currentAmount / goal.goalAmount) * 100;
           const remaining = goal.goalAmount - goal.currentAmount;
 
@@ -249,8 +305,10 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
               key={goal.id}
               data-onboarding-id={i === 0 ? "goal-progress-bar" : undefined}
               className={`p-6 hover:shadow-lg transition-shadow ${
-                progress >= 100 && !isCancelled ? "border-green-500 border-2" : ""
-              } ${isCancelled ? "opacity-75 grayscale-[0.5] border-dashed" : ""}`}
+                progress >= 100 && !isCancelled && !isPaused ? "border-green-500 border-2" : ""
+              } ${isCancelled || isExpired ? "opacity-75 grayscale-[0.5] border-dashed" : ""} ${
+                isPaused ? "border-amber-400 border-2" : ""
+              }`}
             >
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="relative">
@@ -294,17 +352,20 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
                           </Badge>
                         )}
                         {isCancelled && (
-                          <Badge variant="destructive" className="text-xs">
-                            Cancelled
-                          </Badge>
+                          <Badge variant="destructive" className="text-xs">Cancelled</Badge>
+                        )}
+                        {isExpired && (
+                          <Badge variant="destructive" className="text-xs bg-gray-500 hover:bg-gray-600">Expired</Badge>
+                        )}
+                        {isPaused && (
+                          <Badge className="text-xs bg-amber-500 hover:bg-amber-600">Paused</Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {isCancelled
-                          ? "Goal was cancelled"
-                          : `Reach your basket by ${goal.targetDate
-                              ? format(new Date(goal.targetDate), "MMM d, yyyy")
-                              : "No deadline"}`}
+                        {isCancelled ? "Goal was cancelled" :
+                         isExpired ? "Goal expired — funds refunded" :
+                         isPaused ? `Target date passed on ${goal.pausedAt ? format(new Date(goal.pausedAt), "MMM d, yyyy") : "—"}` :
+                         `Reach your basket by ${goal.targetDate ? format(new Date(goal.targetDate), "MMM d, yyyy") : "No deadline"}`}
                       </p>
                     </div>
                     <DropdownMenu>
@@ -357,14 +418,21 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
 
                   <div className="flex items-center justify-between pt-2 border-t border-border">
                     <div>
-                      <p className="text-xs text-muted-foreground">
-                        Regular Top-Up
-                      </p>
+                      <p className="text-xs text-muted-foreground">Regular Top-Up</p>
                       <p className="text-sm font-semibold text-foreground">
                         ₦{goal.regularTopUp?.toLocaleString() || "0"}
                       </p>
                     </div>
-                    {progress >= 100 && !isCancelled ? (
+                    {isPaused ? (
+                      <Button
+                        size="sm"
+                        className="gap-2 bg-amber-500 hover:bg-amber-600 text-white"
+                        onClick={() => { setGoalToContinue(goal); setContinueDate(""); }}
+                      >
+                        <CalendarDays className="w-4 h-4" />
+                        Continue Goal
+                      </Button>
+                    ) : progress >= 100 && !isCancelled && !isExpired ? (
                       <Button
                         size="sm"
                         className="gap-2 bg-green-600 hover:bg-green-700"
@@ -377,7 +445,7 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
                         size="sm"
                         className="gap-2"
                         onClick={() => handleAddFunds(goal.id)}
-                        disabled={isCancelled}
+                        disabled={isCancelled || isExpired}
                       >
                         <Plus className="w-4 h-4" />
                         Top Up Basket
@@ -569,6 +637,138 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
 
       {/* Deposit Modal */}
       <DepositModal open={showDepositModal} onOpenChange={setShowDepositModal} />
+
+      {/* Continue Goal Modal */}
+      <Dialog open={!!goalToContinue} onOpenChange={(open) => { if (!open) { setGoalToContinue(null); setContinueDate(""); } }}>
+        <DialogContent className="max-w-md">
+          {goalToContinue && (() => {
+            const priceCase = getPriceCase(goalToContinue);
+            const currentPrice = goalToContinue.commodityCurrentPrice ?? goalToContinue.lockedPrice;
+            const lockedPrice = goalToContinue.lockedPrice;
+            const excess = goalToContinue.currentAmount - currentPrice;
+            const minDate = new Date(); minDate.setDate(minDate.getDate() + 7);
+            const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + 90);
+
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    {priceCase === "UP" && <><TrendingUp className="w-5 h-5 text-red-500" /> Market Price Changed</>}
+                    {priceCase === "SAME" && <><Minus className="w-5 h-5 text-blue-500" /> Continue Saving</>}
+                    {priceCase === "DOWN_ENOUGH" && <><TrendingDown className="w-5 h-5 text-green-500" /> Goal Auto-Completed</>}
+                    {priceCase === "DOWN_NOT_ENOUGH" && <><TrendingDown className="w-5 h-5 text-green-500" /> Market Price Dropped</>}
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  {/* Price context */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-muted">
+                      <p className="text-xs text-muted-foreground">Your Locked Price</p>
+                      <p className="text-base font-bold font-mono">₦{lockedPrice.toLocaleString()}</p>
+                    </div>
+                    <div className={`p-3 rounded-lg ${priceCase === "UP" ? "bg-red-50 border border-red-200" : "bg-green-50 border border-green-200"}`}>
+                      <p className="text-xs text-muted-foreground">Current Market Price</p>
+                      <p className={`text-base font-bold font-mono ${priceCase === "UP" ? "text-red-600" : "text-green-600"}`}>
+                        ₦{currentPrice.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Saved so far */}
+                  <div className="p-3 rounded-lg bg-muted">
+                    <p className="text-xs text-muted-foreground">Saved so far</p>
+                    <p className="text-base font-bold font-mono">₦{goalToContinue.currentAmount.toLocaleString()}</p>
+                  </div>
+
+                  {/* Case-specific message */}
+                  {priceCase === "UP" && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 space-y-1">
+                      <p className="font-semibold">Your locked price is no longer available.</p>
+                      <p>If you continue, your goal will be updated to the new market price of <strong>₦{currentPrice.toLocaleString()}</strong>. Your ₦{goalToContinue.currentAmount.toLocaleString()} saved carries forward.</p>
+                    </div>
+                  )}
+                  {priceCase === "SAME" && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                      <p>Market price hasn't changed. Set a new target date and keep saving — your progress carries forward.</p>
+                    </div>
+                  )}
+                  {priceCase === "DOWN_ENOUGH" && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800 space-y-1">
+                      <p className="font-semibold">Great news — market price dropped below your savings!</p>
+                      <p>Your goal will be marked as complete. <strong>₦{excess.toLocaleString()}</strong> excess will be refunded to your wallet.</p>
+                    </div>
+                  )}
+                  {priceCase === "DOWN_NOT_ENOUGH" && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800 space-y-1">
+                      <p className="font-semibold">Market price dropped to ₦{currentPrice.toLocaleString()}.</p>
+                      <p>You only need <strong>₦{(currentPrice - goalToContinue.currentAmount).toLocaleString()}</strong> more. Set a new date and keep saving.</p>
+                    </div>
+                  )}
+
+                  {/* Date picker — not needed for DOWN_ENOUGH (auto-completes) */}
+                  {priceCase !== "DOWN_ENOUGH" && (
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5">
+                        <CalendarDays className="w-4 h-4" /> New Target Date
+                      </Label>
+                      <Input
+                        type="date"
+                        value={continueDate}
+                        onChange={(e) => setContinueDate(e.target.value)}
+                        min={minDate.toISOString().split("T")[0]}
+                        max={maxDate.toISOString().split("T")[0]}
+                      />
+                      <p className="text-xs text-muted-foreground">Must be between 7 and 90 days from today.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  {priceCase === "UP" ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={handleExpireGoal}
+                        disabled={continueLoading}
+                      >
+                        {continueLoading ? "Processing..." : "No, Refund Me"}
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        onClick={handleContinueGoal}
+                        disabled={continueLoading || !continueDate}
+                      >
+                        {continueLoading ? "Processing..." : "Yes, Continue"}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => { setGoalToContinue(null); setContinueDate(""); }}
+                        disabled={continueLoading}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        onClick={handleContinueGoal}
+                        disabled={continueLoading || (priceCase !== "DOWN_ENOUGH" && !continueDate)}
+                      >
+                        {continueLoading ? "Processing..." : priceCase === "DOWN_ENOUGH" ? "Complete & Refund" : "Continue Goal"}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

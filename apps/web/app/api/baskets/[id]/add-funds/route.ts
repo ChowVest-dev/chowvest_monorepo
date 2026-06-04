@@ -26,16 +26,14 @@ export async function POST(
       return NextResponse.json({ error: "Minimum deposit amount is ₦500" }, { status: 400 });
     }
 
-    // Get wallet and basket
+    // Get wallet and basket (include commodity for market price check at completion)
     const [wallet, basket] = await Promise.all([
       prisma.wallet.findUnique({
         where: { userId: session.user.id },
       }),
       prisma.basket.findFirst({
-        where: {
-          id: basketId,
-          userId: session.user.id,
-        },
+        where: { id: basketId, userId: session.user.id },
+        include: { commodity: { select: { price: true } } },
       }),
     ]);
 
@@ -125,6 +123,46 @@ export async function POST(
         isCompleted,
       };
     });
+
+    // On completion — check if market price dropped below locked price and refund excess
+    let excessRefund = new Prisma.Decimal(0);
+    if (result.isCompleted && basket.commodity) {
+      const currentMarketPrice = new Prisma.Decimal(basket.commodity.price);
+      const lockedPrice = new Prisma.Decimal(basket.lockedPrice);
+
+      if (currentMarketPrice.lessThan(lockedPrice)) {
+        excessRefund = lockedPrice.sub(currentMarketPrice);
+
+        const walletAfterRefund = await prisma.wallet.update({
+          where: { id: wallet.id },
+          data: { balance: { increment: excessRefund } },
+        });
+
+        await prisma.transaction.create({
+          data: {
+            userId: session.user.id,
+            walletId: wallet.id,
+            basketId: basket.id,
+            type: "REFUND",
+            amount: excessRefund,
+            netAmount: excessRefund,
+            description: `Excess refund from "${basket.name}" — market price is ₦${currentMarketPrice.toFixed(2)}, locked price was ₦${lockedPrice.toFixed(2)}`,
+            status: "COMPLETED",
+            balanceBefore: result.wallet.balance,
+            balanceAfter: walletAfterRefund.balance,
+            completedAt: new Date(),
+          },
+        });
+
+        await sendTransactionNotification(session.user.id, "REFUND", excessRefund.toNumber(), "COMPLETED");
+        await logFinancialAction(
+          session.user.id,
+          "refund",
+          `Excess ₦${excessRefund.toFixed(2)} refunded from "${basket.name}" — market price dropped`,
+          { basketId, excessRefund: excessRefund.toString(), currentMarketPrice: currentMarketPrice.toString() }
+        );
+      }
+    }
 
     // Log the transfer
     await logFinancialAction(

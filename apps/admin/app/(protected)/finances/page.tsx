@@ -12,7 +12,7 @@ import { SearchBar } from "@/components/search-bar";
 export default async function AdminFinancesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const query = (await searchParams).q || "";
 
-  const [transactions, webhooks, revenueAgg] = await Promise.all([
+  const [transactions, webhooks, depositAgg, depositFeeAgg, serviceFeeAgg, deliveryFeeAgg] = await Promise.all([
     prisma.transaction.findMany({
       orderBy: { createdAt: "desc" },
       take: 100,
@@ -31,16 +31,36 @@ export default async function AdminFinancesPage({ searchParams }: { searchParams
       orderBy: { processedAt: "desc" },
       take: 100,
     }),
+    // Deposit volume + what Paystack actually charged
     prisma.transaction.aggregate({
-      _sum: { fee: true, processorFee: true },
-      where: { status: "COMPLETED" },
+      _sum: { amount: true, processorFee: true },
+      where: { status: "COMPLETED", type: "DEPOSIT" },
+    }),
+    // Processing fees we collected from users on deposits (our revenue attempt)
+    prisma.transaction.aggregate({
+      _sum: { fee: true },
+      where: { status: "COMPLETED", type: "DEPOSIT" },
+    }),
+    // Platform service fee revenue (100% ours — deducted from wallet)
+    prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: { status: "COMPLETED", type: "SERVICE_FEE" },
+    }),
+    // Platform delivery fee revenue (100% ours — deducted from wallet)
+    prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: { status: "COMPLETED", type: "DELIVERY_FEE" },
     }),
   ]);
 
-  const grossFees    = Number(revenueAgg._sum.fee || 0);
-  const paystackCut  = Number(revenueAgg._sum.processorFee || 0);
-  const netRevenue   = grossFees - paystackCut;
-
+  const totalDepositsProcessed = Number(depositAgg._sum.amount || 0);
+  const paystackCut            = Number(depositAgg._sum.processorFee || 0);
+  const depositFeesCollected   = Number(depositFeeAgg._sum.fee || 0);
+  const depositFeeVariance     = depositFeesCollected - paystackCut;
+  const serviceRevenue         = Number(serviceFeeAgg._sum.amount || 0);
+  const deliveryRevenue        = Number(deliveryFeeAgg._sum.amount || 0);
+  const pureRevenue            = serviceRevenue + deliveryRevenue;
+  const netPlatformRevenue     = pureRevenue + depositFeeVariance;
 
   const flaggedTransactions = transactions.filter(t => t.isFlagged);
 
@@ -64,7 +84,7 @@ export default async function AdminFinancesPage({ searchParams }: { searchParams
             <th className="px-6 py-4 font-medium">Principal</th>
             <th className="px-6 py-4 font-medium">Processing Fee</th>
             <th className="px-6 py-4 font-medium">Paystack Cut</th>
-            <th className="px-6 py-4 font-medium text-right">Variance</th>
+            <th className="px-6 py-4 font-medium text-right">Platform Net</th>
             <th className="px-6 py-4 font-medium">Timestamp</th>
           </tr>
         </thead>
@@ -101,16 +121,12 @@ export default async function AdminFinancesPage({ searchParams }: { searchParams
                 <div className="text-xs text-muted-foreground">{tx.user?.email || "Unknown"}</div>
               </td>
               <td className="px-6 py-4 font-mono font-medium">
-                {["FEE", "DELIVERY_FEE"].includes(tx.type) && !tx.fee
-                  ? `₦${(Number(tx.amount) - 100).toLocaleString()}`
-                  : `₦${Number(tx.amount).toLocaleString()}`}
+                ₦{Number(tx.amount).toLocaleString()}
               </td>
               <td className="px-6 py-4 font-mono text-muted-foreground">
                 <div className="flex flex-col gap-1">
                   <span>
-                    ₦{["FEE", "DELIVERY_FEE"].includes(tx.type) && !tx.fee
-                      ? "100"
-                      : Number(tx.fee || 0).toLocaleString()}
+                    ₦{Number(tx.fee || 0).toLocaleString()}
                   </span>
                   <span className="text-[10px] uppercase font-semibold text-primary/70">
                     {(tx.metadata as any)?.feeType || (tx.type === "DEPOSIT" ? "Processing Fee" : "Service Fee")}
@@ -118,16 +134,32 @@ export default async function AdminFinancesPage({ searchParams }: { searchParams
                 </div>
               </td>
               <td className="px-6 py-4 font-mono text-muted-foreground">
-                ₦{Number(tx.processorFee || 0).toLocaleString()}
+                {tx.type === "DEPOSIT" ? (() => {
+                  const actual = Number(tx.processorFee || 0);
+                  const expected = Math.min(Math.round(Number(tx.amount) * 0.015), 2000);
+                  const drift = Math.abs(actual - expected);
+                  return (
+                    <div className="flex flex-col gap-0.5">
+                      <span>₦{actual.toLocaleString()}</span>
+                      {drift > 10 && (
+                        <span className="text-[10px] text-amber-600 font-semibold">
+                          Expected ₦{expected.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })() : (
+                  <span>₦{Number(tx.processorFee || 0).toLocaleString()}</span>
+                )}
               </td>
               <td className="px-6 py-4 font-mono font-bold text-right">
                 {(() => {
                    let feeVal = Number(tx.fee || 0);
                    if (["FEE", "DELIVERY_FEE"].includes(tx.type) && !tx.fee) feeVal = 100;
 
-                   const variance = feeVal - Number(tx.processorFee || 0);
-                   if (variance > 0) return <span className="text-green-600">+₦{variance.toLocaleString()}</span>;
-                   if (variance < 0) return <span className="text-red-500">-₦{Math.abs(variance).toLocaleString()}</span>;
+                   const net = feeVal - Number(tx.processorFee || 0);
+                   if (net > 0) return <span className="text-green-600">+₦{net.toLocaleString()}</span>;
+                   if (net < 0) return <span className="text-red-500">-₦{Math.abs(net).toLocaleString()}</span>;
                    return <span className="text-muted-foreground">₦0</span>;
                 })()}
               </td>
@@ -186,23 +218,54 @@ export default async function AdminFinancesPage({ searchParams }: { searchParams
         </div>
 
         {/* Revenue Summary Cards */}
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+          {/* Deposit volume — scale indicator */}
           <div className="rounded-xl border bg-card shadow-sm p-5">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Gross Collected Fees</p>
-            <p className="text-2xl font-bold mt-1 font-mono">₦{grossFees.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground mt-1">All platform fees, all time</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Deposit Volume</p>
+            <p className="text-2xl font-bold mt-1 font-mono">₦{totalDepositsProcessed.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">Total user deposits, all time</p>
           </div>
+          {/* What we charged users for deposit processing */}
+          <div className="rounded-xl border bg-card shadow-sm p-5">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Fees Collected</p>
+            <p className="text-2xl font-bold mt-1 font-mono text-blue-600">₦{depositFeesCollected.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">Processing fees charged to users</p>
+          </div>
+          {/* What Paystack actually took */}
           <div className="rounded-xl border bg-card shadow-sm p-5">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Paystack Cut</p>
             <p className="text-2xl font-bold mt-1 font-mono text-red-500">₦{paystackCut.toLocaleString()}</p>
             <p className="text-xs text-muted-foreground mt-1">Processor fees paid out</p>
           </div>
-          <div className="rounded-xl border bg-green-500/10 border-green-500/20 shadow-sm p-5">
-            <p className="text-xs text-green-700 font-medium uppercase tracking-wide flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" /> Variance
+          {/* Key reconciliation metric — fees collected vs Paystack cost */}
+          <div className={`rounded-xl border shadow-sm p-5 ${depositFeeVariance >= 0 ? "bg-green-500/10 border-green-500/20" : "bg-red-500/10 border-red-500/20"}`}>
+            <p className={`text-xs font-medium uppercase tracking-wide ${depositFeeVariance >= 0 ? "text-green-700" : "text-red-700"}`}>
+              Deposit Fee P&L
             </p>
-            <p className="text-2xl font-bold mt-1 font-mono text-green-600">₦{netRevenue.toLocaleString()}</p>
-            <p className="text-xs text-green-700/70 mt-1">After processor deductions</p>
+            <p className={`text-2xl font-bold mt-1 font-mono ${depositFeeVariance >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {depositFeeVariance >= 0 ? "+" : "-"}₦{Math.abs(depositFeeVariance).toLocaleString()}
+            </p>
+            <p className={`text-xs mt-1 ${depositFeeVariance >= 0 ? "text-green-700/70" : "text-red-700/70"}`}>
+              Fees collected minus Paystack cost
+            </p>
+          </div>
+          {/* Pure platform revenue — 100% ours */}
+          <div className="rounded-xl border bg-card shadow-sm p-5">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Platform Revenue</p>
+            <p className="text-2xl font-bold mt-1 font-mono text-orange-500">₦{pureRevenue.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">Service + delivery fees (100% ours)</p>
+          </div>
+          {/* True bottom line */}
+          <div className={`rounded-xl border shadow-sm p-5 ${netPlatformRevenue >= 0 ? "bg-green-500/10 border-green-500/20" : "bg-red-500/10 border-red-500/20"}`}>
+            <p className={`text-xs font-medium uppercase tracking-wide flex items-center gap-1 ${netPlatformRevenue >= 0 ? "text-green-700" : "text-red-700"}`}>
+              <TrendingUp className="w-3.5 h-3.5" /> True Net Revenue
+            </p>
+            <p className={`text-2xl font-bold mt-1 font-mono ${netPlatformRevenue >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {netPlatformRevenue >= 0 ? "+" : "-"}₦{Math.abs(netPlatformRevenue).toLocaleString()}
+            </p>
+            <p className={`text-xs mt-1 ${netPlatformRevenue >= 0 ? "text-green-700/70" : "text-red-700/70"}`}>
+              Platform revenue after all processor costs
+            </p>
           </div>
         </div>
 

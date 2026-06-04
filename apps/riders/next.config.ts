@@ -9,6 +9,7 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   transpilePackages: ["@chowvest/ui", "@chowvest/shared", "@chowvest/database"],
   serverExternalPackages: ['@prisma/client'],
+  turbopack: {},
 };
 
 export default withPWA(nextConfig);

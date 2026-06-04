@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { Toaster } from "@chowvest/ui";
 import { MaintenanceBanner } from "@/components/maintenance/MaintenanceBanner";
+import { PriceChangeModal } from "@/components/notifications/price-change-modal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
         <Toaster />
         <Providers>
           {children}
+          <PriceChangeModal />
           <OnboardingTour />
         </Providers>
       </body>
