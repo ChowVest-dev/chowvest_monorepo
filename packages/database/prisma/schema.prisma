@@ -244,12 +244,15 @@ model Basket {
   // Basket details
   name          String
   commodityType String? // "rice", "beans", "maize", etc.
+  commodityId   String? // FK to Commodity — for live price comparison
+  commodity     Commodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
   image         String? // URL to commodity image
   description   String? @db.Text
   category      String  @default("Foodstuff")
 
   // Goal tracking
   goalAmount    Decimal   @db.Decimal(15, 2)
+  lockedPrice   Decimal   @default(0) @db.Decimal(15, 2) // Price at goal creation — never mutated
   currentAmount Decimal   @default(0) @db.Decimal(15, 2)
   targetDate    DateTime? // Target deadline
 
@@ -267,10 +270,14 @@ model Basket {
   // Milestones
   milestones Json? // Track progress milestones
 
+  // Reminder tracking — prevents duplicate cron notifications
+  remindersSent String[] @default([])
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  completedAt DateTime? // When goal was reached
+  completedAt DateTime?
   pausedAt    DateTime?
+  expiredAt   DateTime? // Set when user says NO after pause
   cancelledAt DateTime?
 
   transactions Transaction[]
@@ -280,6 +287,7 @@ model Basket {
   @@index([userId])
   @@index([status])
   @@index([nextAutoSaveAt])
+  @@index([commodityId])
   @@map("baskets")
 }
 
@@ -288,6 +296,7 @@ enum BasketStatus {
   COMPLETED
   PAUSED
   CANCELLED
+  EXPIRED
 }
 
 // ============================================
@@ -341,6 +350,7 @@ model Commodity {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  baskets               Basket[]
   basketOrders          BasketOrder[]
   marketplaceOrderItems MarketplaceOrderItem[]
 

@@ -35,6 +35,9 @@ interface Basket {
   regularTopUp: number | null;
   category: string;
   status: string;
+  lockedPrice: number;
+  pausedAt: string | null;
+  commodityCurrentPrice?: number | null;
   createdAt: string;
 }
 
@@ -78,6 +81,7 @@ function BasketGoalsClientInner({
         ...b,
         goalAmount: Number(b.goalAmount),
         currentAmount: Number(b.currentAmount),
+        lockedPrice: Number(b.lockedPrice),
         regularTopUp: b.regularTopUp ? Number(b.regularTopUp) : null,
       }));
       setBaskets(fetchedBaskets);

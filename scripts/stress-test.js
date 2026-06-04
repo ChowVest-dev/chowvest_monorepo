@@ -24,13 +24,28 @@ import { Rate, Trend } from "k6/metrics";
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 const TEST_EMAIL = __ENV.TEST_EMAIL || "zehelias207@gmail.com";
 const TEST_PASSWORD = __ENV.TEST_PASSWORD || "Test12345";
+const ADMIN_URL =  __ENV.ADMIN_URL || "http://localhost:3001";
+const ADMIN_EMAIL = __ENV.ADMIN_EMAIL || "pluggitoshfl5050@gmail.com";
+const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD || "carew";
+const RIDER_URL = __ENV.RIDER_URL || "http://localhost:3002";
+const RIDER_PHONE = __ENV.RIDER_PHONE || "08000000000";
+const RIDER_PIN = __ENV.RIDER_PIN || "1234";
+const LOGISTICS_EMAIL = __ENV.LOGISTICS_EMAIL || "logistics@chowvest.com";
+const LOGISTICS_PASSWORD = __ENV.LOGISTICS_PASSWORD || "Test12345";
+
 const PROFILE = __ENV.PROFILE || "default";
 
 // ─── Custom Metrics ─────────────────────────────────────────────────
 const loginSuccess = new Rate("login_success");
+const adminLoginSuccess = new Rate("admin_login_success");
+const riderLoginSuccess = new Rate("rider_login_success");
+const logisticsLoginSuccess = new Rate("logistics_login_success");
 const apiErrors = new Rate("api_errors");
 const walletLatency = new Trend("wallet_latency", true);
 const commoditiesLatency = new Trend("commodities_latency", true);
+const adminDashboardLatency = new Trend("admin_dashboard_latency", true);
+const riderDashboardLatency = new Trend("rider_dashboard_latency", true);
+const logisticsDashboardLatency = new Trend("logistics_dashboard_latency", true);
 
 // ─── Load Profiles ──────────────────────────────────────────────────
 const profiles = {
@@ -95,6 +110,36 @@ function getAuthCookies() {
   return true;
 }
 
+function getAdminAuthCookies() {
+  const loginRes = http.post(
+    `${ADMIN_URL}/api/auth/login`,
+    JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
+    { headers: { "Content-Type": "application/json" } }
+  );
+  adminLoginSuccess.add(loginRes.status === 200);
+  if (loginRes.status !== 200) console.warn(`Admin login failed: ${loginRes.status}`);
+}
+
+function getRiderAuthCookies() {
+  const loginRes = http.post(
+    `${RIDER_URL}/api/auth/rider/login`,
+    JSON.stringify({ phone: RIDER_PHONE, pin: RIDER_PIN }),
+    { headers: { "Content-Type": "application/json" } }
+  );
+  riderLoginSuccess.add(loginRes.status === 200);
+  if (loginRes.status !== 200) console.warn(`Rider login failed: ${loginRes.status}`);
+}
+
+function getLogisticsAuthCookies() {
+  const loginRes = http.post(
+    `${RIDER_URL}/api/auth/logistics/login`,
+    JSON.stringify({ email: LOGISTICS_EMAIL, password: LOGISTICS_PASSWORD }),
+    { headers: { "Content-Type": "application/json" } }
+  );
+  logisticsLoginSuccess.add(loginRes.status === 200);
+  if (loginRes.status !== 200) console.warn(`Logistics login failed: ${loginRes.status}`);
+}
+
 // ─── Test Scenarios ─────────────────────────────────────────────────
 export default function () {
   // ── 1. Public Endpoints (no auth needed) ──
@@ -128,11 +173,15 @@ export default function () {
   // ── 2. Authentication ──
   group("Authentication", () => {
     const loggedIn = getAuthCookies();
+    getAdminAuthCookies();
+    getRiderAuthCookies();
+    getLogisticsAuthCookies();
+    
     if (!loggedIn) {
       apiErrors.add(true);
-      return;
+    } else {
+      apiErrors.add(false);
     }
-    apiErrors.add(false);
   });
 
   sleep(0.5);
@@ -180,6 +229,34 @@ export default function () {
   });
 
   sleep(0.5);
+
+  // ── 5. Admin Portal ──
+  group("Admin Portal", () => {
+    const adminDash = http.get(`${ADMIN_URL}/`);
+    adminDashboardLatency.add(adminDash.timings.duration);
+    check(adminDash, {
+      "admin dashboard: status 200": (r) => r.status === 200,
+    });
+  });
+
+  sleep(0.5);
+
+  // ── 6. Riders / Logistics Portal ──
+  group("Riders Portal", () => {
+    const riderDash = http.get(`${RIDER_URL}/rider/dashboard`);
+    riderDashboardLatency.add(riderDash.timings.duration);
+    check(riderDash, {
+      "rider dashboard: status 200": (r) => r.status === 200,
+    });
+
+    const logisticsDash = http.get(`${RIDER_URL}/logistics/dashboard`);
+    logisticsDashboardLatency.add(logisticsDash.timings.duration);
+    check(logisticsDash, {
+      "logistics dashboard: status 200": (r) => r.status === 200,
+    });
+  });
+
+  sleep(0.5);
 }
 
 // ─── Summary ────────────────────────────────────────────────────────
@@ -190,7 +267,10 @@ export function handleSummary(data) {
     "Avg response time": `${Math.round(data.metrics.http_req_duration.values.avg)}ms`,
     "p95 response time": `${Math.round(data.metrics.http_req_duration.values["p(95)"]) }ms`,
     "Max response time": `${Math.round(data.metrics.http_req_duration.values.max)}ms`,
-    "Login success rate": `${(data.metrics.login_success?.values?.rate * 100 || 0).toFixed(1)}%`,
+    "Web Login success": `${(data.metrics.login_success?.values?.rate * 100 || 0).toFixed(1)}%`,
+    "Admin Login success": `${(data.metrics.admin_login_success?.values?.rate * 100 || 0).toFixed(1)}%`,
+    "Rider Login success": `${(data.metrics.rider_login_success?.values?.rate * 100 || 0).toFixed(1)}%`,
+    "Logistics Login success": `${(data.metrics.logistics_login_success?.values?.rate * 100 || 0).toFixed(1)}%`,
   };
 
   console.log("\n╔══════════════════════════════════════╗");

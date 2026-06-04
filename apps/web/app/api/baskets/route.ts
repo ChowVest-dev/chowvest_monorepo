@@ -5,7 +5,7 @@ import { logAction } from "@/lib/audit";
 import { Prisma } from "@chowvest/database";
 
 // GET - List user's baskets
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await getSession();
 
@@ -19,9 +19,8 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: "desc" },
         include: {
           deliveries: true,
-          _count: {
-            select: { transactions: true },
-          },
+          commodity: { select: { price: true } },
+          _count: { select: { transactions: true } },
         },
       }),
       prisma.wallet.findUnique({
@@ -40,6 +39,8 @@ export async function GET(req: NextRequest) {
       ...basket,
       goalAmount: basket.goalAmount.toString(),
       currentAmount: basket.currentAmount.toString(),
+      lockedPrice: basket.lockedPrice.toString(),
+      commodityCurrentPrice: basket.commodity ? Number(basket.commodity.price) : null,
       regularTopUp: basket.regularTopUp?.toString(),
       autoSaveAmount: basket.autoSaveAmount?.toString(),
     }));
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
     const {
       name,
       commodityType,
+      commodityId,
       image,
       description,
       category,
@@ -97,6 +99,16 @@ export async function POST(req: NextRequest) {
     const autoSaveAmountDecimal = autoSaveAmount
       ? new Prisma.Decimal(autoSaveAmount)
       : null;
+
+    // Resolve lockedPrice — commodity's price at creation time, never mutated later
+    let lockedPrice = goalAmountDecimal;
+    if (commodityId) {
+      const commodity = await prisma.commodity.findUnique({
+        where: { id: commodityId },
+        select: { price: true },
+      });
+      if (commodity) lockedPrice = new Prisma.Decimal(commodity.price);
+    }
 
     // Validate auto-save settings
     if (autoSaveEnabled) {
@@ -126,6 +138,8 @@ export async function POST(req: NextRequest) {
         userId: session.user.id,
         name,
         commodityType,
+        commodityId: commodityId || null,
+        lockedPrice,
         image,
         description,
         category: category || "Foodstuff",

@@ -199,6 +199,7 @@ export async function POST(req: NextRequest) {
           basketId: basket.id,
           type: "DELIVERY_FEE",
           amount: deliveryFee,
+          fee: new Prisma.Decimal(deliveryFee), // Full amount is platform revenue
           netAmount: deliveryFee,
           description: `Delivery Fee for ${basket.name}`,
           status: "COMPLETED",
@@ -216,6 +217,7 @@ export async function POST(req: NextRequest) {
           basketId: basket.id,
           type: "SERVICE_FEE",
           amount: SERVICE_FEE,
+          fee: new Prisma.Decimal(SERVICE_FEE), // Full amount is platform revenue
           netAmount: SERVICE_FEE,
           description: `Platform Service Fee for ${basket.name}`,
           status: "COMPLETED",

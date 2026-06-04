@@ -138,3 +138,70 @@ export async function sendAutoSaveNotification(
     metadata: { basketName, amount },
   });
 }
+
+/**
+ * Send goal deadline reminder notification (30/15/7/4/1 days out)
+ */
+export async function sendGoalReminderNotification(
+  userId: string,
+  basketName: string,
+  daysLeft: number
+) {
+  const urgency = daysLeft <= 4 ? "urgent" : "reminder";
+  const title = daysLeft === 1
+    ? `Final Warning — "${basketName}" expires tomorrow`
+    : `${daysLeft} days left on "${basketName}"`;
+  const message = daysLeft === 1
+    ? `Your "${basketName}" savings goal expires tomorrow. Top up now to avoid missing your target.`
+    : `You have ${daysLeft} days left to reach your "${basketName}" savings goal. Keep saving!`;
+
+  await createNotification({
+    userId,
+    type: "goal_reminder",
+    title,
+    message,
+    link: "/basket-goals",
+    metadata: { basketName, daysLeft, urgency },
+  });
+}
+
+/**
+ * Send goal paused notification — fires when target date passes without completion
+ */
+export async function sendGoalPausedNotification(
+  userId: string,
+  basketName: string
+) {
+  await createNotification({
+    userId,
+    type: "goal_paused",
+    title: `Your "${basketName}" goal has been paused`,
+    message: `Your target date has passed. Visit your goals to decide whether to continue saving or get a full refund.`,
+    link: "/basket-goals",
+    metadata: { basketName },
+  });
+}
+
+/**
+ * Send price change notification — fires when admin updates commodity price while goal is ACTIVE
+ */
+export async function sendGoalPriceChangeNotification(
+  userId: string,
+  basketName: string,
+  lockedPrice: number,
+  newPrice: number
+) {
+  const direction = newPrice > lockedPrice ? "increased" : "decreased";
+  const message = newPrice > lockedPrice
+    ? `The market price for "${basketName}" has ${direction} to ₦${newPrice.toLocaleString()}. Your locked price of ₦${lockedPrice.toLocaleString()} still applies — keep saving.`
+    : `The market price for "${basketName}" has ${direction} to ₦${newPrice.toLocaleString()}. You still save toward your locked price of ₦${lockedPrice.toLocaleString()}. Any excess will be refunded on completion.`;
+
+  await createNotification({
+    userId,
+    type: "goal_price_change",
+    title: `Market price changed for "${basketName}"`,
+    message,
+    link: "/basket-goals",
+    metadata: { basketName, lockedPrice, newPrice, direction },
+  });
+}
