@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && pnpm --filter chowvest-admin build",
+  "buildCommand": "cd ../.. && pnpm --filter chowvest-riders build",
   "installCommand": "cd ../.. && pnpm install",
   "outputDirectory": ".next"
 }
