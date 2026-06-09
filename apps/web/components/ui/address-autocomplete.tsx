@@ -87,7 +87,7 @@ export function AddressAutocomplete({
   };
 
   const handleSelectSuggestion = (suggestion: any) => {
-    const text = suggestion.placePrediction?.text?.text || "";
+    const text = suggestion.placePrediction?.text?.text || suggestion.description || "";
     setInputValue(text);
     onChange(text);
     setIsOpen(false);
@@ -117,7 +117,7 @@ export function AddressAutocomplete({
       {isOpen && suggestions.length > 0 && (
         <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
           {suggestions.map((suggestion, index) => {
-             const text = suggestion.placePrediction?.text?.text;
+             const text = suggestion.placePrediction?.text?.text || suggestion.description;
              if (!text) return null;
              return (
               <button
