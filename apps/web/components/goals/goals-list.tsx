@@ -647,7 +647,7 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
             const lockedPrice = goalToContinue.lockedPrice;
             const excess = goalToContinue.currentAmount - currentPrice;
             const minDate = new Date(); minDate.setDate(minDate.getDate() + 7);
-            const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + 90);
+            const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + 60);
 
             return (
               <>
@@ -719,7 +719,7 @@ export function GoalsList({ baskets, balance, onUpdate }: GoalsListProps) {
                         min={minDate.toISOString().split("T")[0]}
                         max={maxDate.toISOString().split("T")[0]}
                       />
-                      <p className="text-xs text-muted-foreground">Must be between 7 and 90 days from today.</p>
+                      <p className="text-xs text-muted-foreground">Must be between 7 and 60 days from today.</p>
                     </div>
                   )}
                 </div>

@@ -347,6 +347,10 @@ model Commodity {
   // Status
   isActive Boolean @default(true)
 
+  // Supplier link
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -758,4 +762,23 @@ model Rider {
   @@index([companyId])
   @@index([phoneNumber])
   @@map("riders")
+}
+
+// ============================================
+// SUPPLIERS
+// ============================================
+
+model Supplier {
+  id          String   @id @default(cuid())
+  name        String
+  phoneNumber String
+  location    String
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  commodities Commodity[]
+
+  @@map("suppliers")
 }

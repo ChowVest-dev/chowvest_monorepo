@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useSession } from "../providers/session-provider";
 import { useRouter } from "next/navigation";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 
 interface UserProps {
   id: string;
@@ -137,12 +138,10 @@ export function ProfileSettings({ user }: { user: UserProps }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              name="location"
-              placeholder={user.location || "Enter location"}
+            <AddressAutocomplete
               value={updateLocation}
-              onChange={(e) => setUpdateLocation(e.target.value)}
+              onChange={setUpdateLocation}
+              placeholder={user.location || "Enter location"}
               disabled={isLoading}
             />
           </div>

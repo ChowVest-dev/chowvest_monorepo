@@ -8,10 +8,10 @@ function generateOTP() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { fullName, email, password, phoneNumber } = await req.json();
+    const { fullName, email, password, phoneNumber, location } = await req.json();
 
     // Validation
-    if (!fullName || !email || !password || !phoneNumber) {
+    if (!fullName || !email || !password || !phoneNumber || !location) {
       return NextResponse.json(
         { error: "All fields are required" },
         { status: 400 }
@@ -40,12 +40,14 @@ export async function POST(req: NextRequest) {
         email: email.toLowerCase(),
         password: hashedPassword,
         phoneNumber,
+        location,
       },
       select: {
         id: true,
         fullName: true,
         email: true,
         phoneNumber: true,
+        location: true,
         profileImage: true,
       },
     });

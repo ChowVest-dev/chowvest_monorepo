@@ -28,12 +28,12 @@ export async function POST(
     const now = new Date();
     const minDate = new Date(now);
     minDate.setDate(minDate.getDate() + 7);
-    const maxDate = new Date(now);
-    maxDate.setDate(maxDate.getDate() + 90);
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 60);
 
     if (newTargetDate < minDate || newTargetDate > maxDate) {
       return NextResponse.json(
-        { error: "Target date must be between 7 and 90 days from today" },
+        { error: "Target date must be between 7 and 60 days from today" },
         { status: 400 }
       );
     }

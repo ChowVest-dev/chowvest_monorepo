@@ -3,8 +3,9 @@
 import { MapPin, Package, Clock, Zap, Wallet, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@chowvest/ui";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DepositModal } from "@/components/wallet/deposit-modal";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 
 interface OrderSummaryProps {
   basket: any;
@@ -12,11 +13,12 @@ interface OrderSummaryProps {
   onSubmitRequestId: (deliveryData: any) => void;
   isSubmitting: boolean;
   walletBalance: number;
+  userLocation?: string;
 }
 
-export function OrderSummary({ basket, commodity, onSubmitRequestId, isSubmitting, walletBalance }: OrderSummaryProps) {
+export function OrderSummary({ basket, commodity, onSubmitRequestId, isSubmitting, walletBalance, userLocation }: OrderSummaryProps) {
   const [option, setOption] = useState<"STANDARD" | "EXPRESS" | "SCHEDULED">("STANDARD");
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(userLocation || "");
   const [notes, setNotes] = useState("");
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [insufficientFunds, setInsufficientFunds] = useState(false);
@@ -122,18 +124,12 @@ export function OrderSummary({ basket, commodity, onSubmitRequestId, isSubmittin
 
       <div>
         <h3 className="text-[10px] font-bold text-muted-foreground mb-3 text-center tracking-wider">DELIVERY ADDRESS</h3>
-        <div className="bg-background border border-border rounded-2xl overflow-hidden flex divide-x divide-border shadow-sm">
-          <div className="w-12 flex items-center justify-center bg-muted/50">
-             <MapPin className="w-4 h-4 text-destructive" />
-          </div>
-          <input 
-            type="text" 
-            placeholder="Enter delivery address..." 
-            className="flex-1 bg-transparent px-4 py-3 text-sm font-medium outline-none placeholder:text-muted-foreground"
-            value={address}
-            onChange={(e: any) => setAddress(e.target.value)}
-          />
-        </div>
+        <AddressAutocomplete 
+          value={address}
+          onChange={setAddress}
+          placeholder="Enter delivery address..."
+          className="bg-background border-border text-foreground"
+        />
 
         <textarea 
           placeholder="Add delivery note (e.g. Call upon arrival)"

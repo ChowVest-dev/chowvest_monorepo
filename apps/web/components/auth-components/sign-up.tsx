@@ -8,6 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import { FullPageLoader } from "@/components/loaders/full-page-loader";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 
 interface SignUpProps {
   onToggle: () => void;
@@ -20,6 +21,7 @@ export function SignUp({ onToggle, onVerify }: SignUpProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [address, setAddress] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,7 +29,7 @@ export function SignUp({ onToggle, onVerify }: SignUpProps) {
     e.preventDefault();
     setError("");
 
-    if (!fullName || !email || !password || !phoneNumber) {
+    if (!fullName || !email || !password || !phoneNumber || !address) {
       setError("Please fill all fields");
       return;
     }
@@ -40,6 +42,7 @@ export function SignUp({ onToggle, onVerify }: SignUpProps) {
         email,
         password,
         phoneNumber,
+        location: address,
       });
 
       const data = response.data;
@@ -149,6 +152,18 @@ export function SignUp({ onToggle, onVerify }: SignUpProps) {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               required
+              disabled={isLoading}
+              className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-foreground">
+              Delivery Address
+            </Label>
+            <AddressAutocomplete
+              value={address}
+              onChange={setAddress}
               disabled={isLoading}
               className="bg-background border-border text-foreground placeholder:text-muted-foreground"
             />

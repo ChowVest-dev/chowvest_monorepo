@@ -81,6 +81,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const MAX_WALLET_BALANCE = 300000;
+    if (wallet.balance.toNumber() + baseAmount > MAX_WALLET_BALANCE) {
+      return NextResponse.json(
+        { error: `Maximum wallet balance is ₦${MAX_WALLET_BALANCE.toLocaleString()}. You can only deposit up to ₦${(MAX_WALLET_BALANCE - wallet.balance.toNumber()).toLocaleString()}.` },
+        { status: 400 }
+      );
+    }
+
     // Generate unique reference
     const reference = generatePaymentReference(session.user.id);
 
