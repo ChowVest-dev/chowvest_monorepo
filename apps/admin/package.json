@@ -12,6 +12,7 @@
     "@chowvest/database": "workspace:*",
     "@chowvest/shared": "workspace:*",
     "@chowvest/ui": "workspace:*",
+    "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -26,7 +27,8 @@
     "react-dom": "19.2.4",
     "recharts": "3.8.1",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "use-debounce": "^10.1.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",

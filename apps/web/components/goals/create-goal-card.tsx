@@ -227,14 +227,14 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
   };
 
   const handleQuantitySelect = () => {
-    if (goalData.quantity < 1 || goalData.quantity > 10) {
-      toast.error("Quantity must be between 1 and 10");
+    if (goalData.quantity < 1 || goalData.quantity > 5) {
+      toast.error("Quantity must be between 1 and 5");
       return;
     }
     
     if (!goalData.targetDate) {
       const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() + 90);
+      targetDate.setDate(targetDate.getDate() + 60);
       setGoalData(prev => ({
         ...prev,
         targetDate: targetDate.toISOString().split("T")[0],
@@ -331,7 +331,7 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
       case "size":
         return "Choose a size that fits your needs";
       case "quantity":
-        return "How many units do you want to secure? (Max 10)";
+        return "How many units do you want to secure? (Max 5)";
       case "date":
         return "Lock in today's price for your future delivery";
       case "review":
@@ -610,7 +610,7 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
                 </Button>
                 <div className="max-w-md mx-auto space-y-6">
                   <div className="space-y-4">
-                    <Label className="text-lg">Quantity (Max: 10)</Label>
+                    <Label className="text-lg">Quantity (Max: 5)</Label>
                     <div className="flex items-center gap-4">
                       <Button
                         variant="outline"
@@ -623,19 +623,19 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
                       <Input
                         type="number"
                         min={1}
-                        max={10}
+                        max={5}
                         value={goalData.quantity}
                         onChange={(e) => {
                           const val = parseInt(e.target.value) || 1;
-                          setGoalData({ ...goalData, quantity: Math.min(10, Math.max(1, val)) });
+                          setGoalData({ ...goalData, quantity: Math.min(5, Math.max(1, val)) });
                         }}
                         className="text-center text-lg font-bold"
                       />
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => setGoalData({ ...goalData, quantity: Math.min(10, goalData.quantity + 1) })}
-                        disabled={goalData.quantity >= 10}
+                        onClick={() => setGoalData({ ...goalData, quantity: Math.min(5, goalData.quantity + 1) })}
+                        disabled={goalData.quantity >= 5}
                       >
                         +
                       </Button>
@@ -663,7 +663,7 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
               const today = new Date();
               const todayStr = today.toISOString().split("T")[0];
               const maxDate = new Date();
-              maxDate.setDate(today.getDate() + 90);
+              maxDate.setDate(today.getDate() + 60);
               const maxDateStr = maxDate.toISOString().split("T")[0];
 
               return (
@@ -680,10 +680,10 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
                 <div className="max-w-md mx-auto space-y-6">
                   <div className="p-6 bg-primary/10 rounded-xl border border-primary/20">
                     <p className="text-center text-foreground font-medium leading-relaxed text-[15px] mb-4">
-                      We lock in today's price for you for up to 90 days. This protects your savings against inflation and ensures rising food costs won't surprise you later.
+                      We lock in today's price for you for up to 60 days. This protects your savings against inflation and ensures rising food costs won't surprise you later.
                     </p>
                     <div className="space-y-2">
-                      <Label htmlFor="target-date">Select Target Date (Max 90 Days)</Label>
+                      <Label htmlFor="target-date">Select Target Date (Max 60 Days)</Label>
                       <Input
                         id="target-date"
                         type="date"

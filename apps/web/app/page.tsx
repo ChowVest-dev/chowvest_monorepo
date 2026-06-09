@@ -266,7 +266,7 @@ export default function LandingPage() {
               <Lock className="w-12 h-12 text-primary mx-auto" />
               <h3 className="text-xl font-semibold">Price Lock Protection</h3>
               <p className="text-muted-foreground">
-                Save gradually and secure today's price for up to 90 days. If food prices rise, you're covered. If prices drop, you still get the new lower price. No pressure. No bulk buying. Just smart planning.
+                Save gradually and secure today's price for up to 60 days. If food prices rise, you're covered. If prices drop, you still get the new lower price. No pressure. No bulk buying. Just smart planning.
               </p>
             </div>
             <div className="bg-muted/50 rounded-xl p-6 text-center space-y-3">

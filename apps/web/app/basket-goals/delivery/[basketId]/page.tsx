@@ -18,7 +18,7 @@ export default async function DeliveryPage({
 
   const { basketId } = await params;
 
-  const [basket, wallet] = await Promise.all([
+  const [basket, wallet, user] = await Promise.all([
     prisma.basket.findFirst({
       where: {
         id: basketId,
@@ -28,6 +28,10 @@ export default async function DeliveryPage({
     prisma.wallet.findUnique({
       where: { userId: session.user.id },
       select: { balance: true }
+    }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { location: true }
     })
   ]);
 
@@ -104,7 +108,8 @@ export default async function DeliveryPage({
           basket={serializedBasket} 
           commodity={commodity} 
           existingDelivery={serializedDelivery} 
-          walletBalance={wallet ? Number(wallet.balance) : 0} 
+          walletBalance={wallet ? Number(wallet.balance) : 0}
+          userLocation={user?.location || ""}
         />
       </Suspense>
     </DeliveryContainer>

@@ -10,6 +10,7 @@ import {
   Settings2,
   ShoppingBasket,
   Store,
+  Truck,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -64,6 +65,15 @@ export function AppSidebar({ admin, ...props }: React.ComponentProps<typeof Side
       items: [
         { title: "Active Deliveries", url: "/deliveries" },
         { title: "Logistics Partners", url: "/deliveries/logistics" },
+      ],
+    },
+    {
+      title: "Suppliers",
+      url: "/suppliers",
+      icon: Truck,
+      isActive: pathname.startsWith("/suppliers"),
+      items: [
+        { title: "All Suppliers", url: "/suppliers" },
       ],
     },
     {

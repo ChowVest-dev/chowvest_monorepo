@@ -14,9 +14,10 @@ interface DeliveryFlowProps {
   commodity: any;
   existingDelivery?: any;
   walletBalance: number;
+  userLocation?: string;
 }
 
-export function DeliveryFlow({ basket, commodity, existingDelivery, walletBalance }: DeliveryFlowProps) {
+export function DeliveryFlow({ basket, commodity, existingDelivery, walletBalance, userLocation }: DeliveryFlowProps) {
   const getDefaultScreen = () => {
     if (!existingDelivery) return "SUMMARY";
     if (existingDelivery.status === "DELIVERED") return "DELIVERED";
@@ -103,6 +104,7 @@ export function DeliveryFlow({ basket, commodity, existingDelivery, walletBalanc
                 onSubmitRequestId={handleCreateDelivery}
                 isSubmitting={isSubmitting}
                 walletBalance={walletBalance}
+                userLocation={userLocation}
               />
             )}
 

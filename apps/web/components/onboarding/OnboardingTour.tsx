@@ -19,14 +19,14 @@ interface OnboardingStep {
   path: string;
   headline: string;
   description: string;
+  interactive?: boolean;
 }
 
 const STEPS: OnboardingStep[] = [
-  // --- DASHBOARD ---
   {
     id: "total-saved",
     path: "/dashboard",
-    headline: "Your Total Savings",
+    headline: "Welcome to Chowvest!",
     description: "This is the total value of all the food items you've secured so far against inflation.",
   },
   {
@@ -36,80 +36,23 @@ const STEPS: OnboardingStep[] = [
     description: "Your ready-to-use cash. Use this to top up your baskets or buy directly from the market.",
   },
   {
-    id: "active-baskets",
-    path: "/dashboard",
-    headline: "Your Active Baskets",
-    description: "Monitor your ongoing savings goals. Once a basket is 100% full, it's ready for delivery!",
-  },
-  {
-    id: "quick-actions",
-    path: "/dashboard",
-    headline: "Fast Actions",
-    description: "Quickly fund your wallet or request a delivery for your completed baskets from here.",
-  },
-
-  // --- WALLET ---
-  {
-    id: "deposit-button",
-    path: "/wallet",
-    headline: "Add Funds",
-    description: "Click here to fund your wallet instantly via card or bank transfer.",
-  },
-  {
-    id: "transaction-history",
-    path: "/wallet",
-    headline: "Activity Log",
-    description: "Track every deposit, transfer, and purchase you've made within the app.",
-  },
-  {
-    id: "quick-transfer",
-    path: "/wallet",
-    headline: "Move Funds",
-    description: "Easily move money from your wallet into any of your active food baskets.",
-  },
-
-  // --- MY BASKET ---
-  {
-    id: "goals-header",
-    path: "/basket-goals",
-    headline: "Basket Overview",
-    description: "See a summary of your savings and how many baskets are ready for delivery.",
-  },
-  {
-    id: "create-target-button",
-    path: "/basket-goals",
-    headline: "Start a New Goal",
-    description: "Pick a new commodity and start saving towards it at today's locked-in price.",
-  },
-  {
-    id: "goals-list",
-    path: "/basket-goals",
-    headline: "Track Progress",
-    description: "Monitor exactly how much you've saved and how close you are to completing each goal.",
-  },
-
-  // --- DELIVERIES ---
-  {
     id: "deliveries-header",
     path: "/deliveries",
     headline: "Live Tracking",
-    description: "Follow your filled baskets as they leave our warehouse and head to your doorstep.",
+    description: "Once your basket is 100% full, request delivery and track it here.",
   },
-
-  // --- MARKET ---
   {
     id: "market-header",
     path: "/market",
     headline: "Direct Marketplace",
-    description: "Soon you'll be able to bypass the savings goals and buy food items for immediate delivery.",
+    description: "You can also bypass savings goals and buy food items for immediate delivery here.",
   },
-
-  // --- PROFILE ---
   {
-    id: "profile-stats",
-    path: "/profile",
-    headline: "Your Milestones",
-    description: "Check your historical achievements and overall savings growth over time.",
+    id: "create-target-button",
+    path: "/basket-goals",
+    headline: "Start Your First Goal",
+    description: "Click the highlighted button to pick a commodity and start saving! The tour will finish automatically.",
+    interactive: true,
   },
 ];
 
@@ -264,6 +207,7 @@ export function OnboardingTour() {
     return () => clearInterval(interval);
   }, [mounted, user?.hasCompletedOnboarding]);
 
+
   // Activate first step when component becomes relevant
   useEffect(() => {
     if (!mounted) return;
@@ -305,6 +249,39 @@ export function OnboardingTour() {
   const handleSkip = useCallback(async () => {
     await markComplete();
   }, [markComplete]);
+
+  // Global click handler for interactive steps
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (!mounted || loading || !user || user.hasCompletedOnboarding) return;
+      const step = STEPS[stepIndex];
+      if (!step || !step.interactive || !spotlightRect) return;
+
+      const { clientX, clientY } = e;
+      const { left, top, width, height } = spotlightRect;
+
+      const isInsideSpotlight =
+        clientX >= left &&
+        clientX <= left + width &&
+        clientY >= top &&
+        clientY <= top + height;
+
+      if (!isInsideSpotlight) {
+        // Block clicks outside the spotlight
+        e.stopPropagation();
+        e.preventDefault();
+      } else {
+        // Click is inside! Let it happen naturally, then finish/advance.
+        setTimeout(() => {
+          handleNext();
+        }, 150);
+      }
+    };
+
+    // Use capture phase to intercept before React
+    document.addEventListener("click", handleDocumentClick, true);
+    return () => document.removeEventListener("click", handleDocumentClick, true);
+  }, [mounted, loading, user, stepIndex, spotlightRect, handleNext]);
 
   // Don't render if: portal not ready, loading, no user, or tour already done
   if (!mounted || loading || !user || user.hasCompletedOnboarding) {
@@ -375,14 +352,16 @@ export function OnboardingTour() {
         )}
       </svg>
 
-      {/* Clickable backdrop to skip — only outside spotlight */}
-      <div
-        className="fixed inset-0"
-        style={{ zIndex: 9999 }}
-        onClick={() => {
-          // Only skip if clicking clearly outside the spotlight area
-        }}
-      />
+      {/* Clickable backdrop to block clicks outside spotlight */}
+      {!step.interactive && (
+        <div
+          className="fixed inset-0"
+          style={{ zIndex: 9999 }}
+          onClick={() => {
+            // Only skip if clicking clearly outside the spotlight area
+          }}
+        />
+      )}
 
       {/* Loading indicator when navigating */}
       {isNavigating && (
@@ -410,6 +389,7 @@ export function OnboardingTour() {
             onSkip={handleSkip}
             isFirst={stepIndex === 0}
             isLast={stepIndex === STEPS.length - 1}
+            isInteractive={step.interactive}
           />
         </div>
       </div>

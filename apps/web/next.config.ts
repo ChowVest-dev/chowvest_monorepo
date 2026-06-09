@@ -1,5 +1,10 @@
 import { withSentryConfig } from "@sentry/nextjs";
+import withPWAInit from "@ducanh2912/next-pwa";
 import type { NextConfig } from "next";
+
+const withPWA = withPWAInit({
+  dest: "public",
+});
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -7,7 +12,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@chowvest/ui", "@chowvest/shared", "@chowvest/database"],
 };
 
-export default withSentryConfig(nextConfig, {
+export default withSentryConfig(withPWA(nextConfig), {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 

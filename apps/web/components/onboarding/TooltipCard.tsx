@@ -31,6 +31,7 @@ interface TooltipCardProps {
   onSkip: () => void;
   isFirst: boolean;
   isLast: boolean;
+  isInteractive?: boolean;
 }
 
 export function TooltipCard({
@@ -45,6 +46,7 @@ export function TooltipCard({
   onSkip,
   isFirst,
   isLast,
+  isInteractive,
 }: TooltipCardProps) {
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -222,10 +224,14 @@ export function TooltipCard({
             Skip tour
           </button>
 
-          <Button size="sm" onClick={onNext} className="gap-1">
-            {isLast ? "Finish" : "Next"}
-            {!isLast && <ChevronRight className="w-4 h-4" />}
-          </Button>
+          {isInteractive ? (
+            <span className="text-xs text-primary font-medium animate-pulse px-2">Action required</span>
+          ) : (
+            <Button size="sm" onClick={onNext} className="gap-1">
+              {isLast ? "Finish" : "Next"}
+              {!isLast && <ChevronRight className="w-4 h-4" />}
+            </Button>
+          )}
         </div>
       </CardFooter>
     </Card>
