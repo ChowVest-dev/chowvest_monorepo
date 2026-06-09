@@ -41,7 +41,7 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button asChild size="lg" className="text-base">
-                  <Link href="/">
+                  <Link href="/auth">
                     Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
@@ -184,7 +184,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <Button asChild className="w-full">
-                  <Link href="/">Get Started</Link>
+                  <Link href="/auth">Get Started</Link>
                 </Button>
               </div>
             </div>
@@ -213,7 +213,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <Button asChild className="w-full">
-                  <Link href="/">Get Started</Link>
+                  <Link href="/auth">Get Started</Link>
                 </Button>
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <Button asChild className="w-full">
-                  <Link href="/">Get Started</Link>
+                  <Link href="/auth">Get Started</Link>
                 </Button>
               </div>
             </div>
@@ -323,7 +323,7 @@ export default function LandingPage() {
             Join 47 smart Nigerians already beating food inflation with Chowvest
           </p>
           <Button asChild size="lg" variant="secondary" className="text-base">
-            <Link href="/">
+            <Link href="/auth">
               Create Your Account Now <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
