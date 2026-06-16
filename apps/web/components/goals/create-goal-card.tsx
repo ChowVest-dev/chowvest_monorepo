@@ -263,6 +263,18 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
     }
   };
 
+  const calculateWeeklyTopUp = (totalAmount: number, targetDateStr: string) => {
+    if (!targetDateStr) return totalAmount;
+    const today = new Date();
+    const target = new Date(targetDateStr);
+    today.setHours(0, 0, 0, 0);
+    target.setHours(0, 0, 0, 0);
+    const diffTime = Math.abs(target.getTime() - today.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const weeks = Math.max(1, Math.ceil(diffDays / 7));
+    return Math.round(totalAmount / weeks);
+  };
+
   const handleCreateGoal = async () => {
     if (!goalData.selectedCommodity || !goalData.targetDate) {
       toast.error("Please complete all steps");
@@ -280,7 +292,7 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
         image: commodity.image,
         goalAmount: Number(commodity.price) * goalData.quantity,
         targetDate: goalData.targetDate,
-        regularTopUp: Math.round((Number(commodity.price) * goalData.quantity) / 10),
+        regularTopUp: calculateWeeklyTopUp(Number(commodity.price) * goalData.quantity, goalData.targetDate),
         description: commodity.description,
       });
 
@@ -785,12 +797,13 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
 
                       <div className="pt-3 border-t">
                         <p className="text-xs text-muted-foreground mb-1">
-                          Suggested Monthly Top-up
+                          Suggested Weekly Top-up
                         </p>
                         <p className="font-semibold text-sm">
                           ₦
-                          {Math.round(
-                            (Number(goalData.selectedCommodity.price) * goalData.quantity) / 10,
+                          {calculateWeeklyTopUp(
+                            Number(goalData.selectedCommodity.price) * goalData.quantity,
+                            goalData.targetDate
                           ).toLocaleString()}
                         </p>
                       </div>
