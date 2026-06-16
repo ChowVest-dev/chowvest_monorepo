@@ -4,9 +4,10 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "scripts": {
-    "generate": "prisma generate --schema=./prisma/schema.prisma",
-    "db:push": "prisma db push --schema=./prisma/schema.prisma",
-    "db:migrate": "prisma migrate dev --schema=./prisma/schema.prisma"
+    "generate": "prisma generate --config=../../prisma.config.ts",
+    "db:push": "prisma db push --config=../../prisma.config.ts",
+    "db:migrate": "prisma migrate dev --config=../../prisma.config.ts",
+    "db:reset": "prisma migrate reset --config=../../prisma.config.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.6.0",
