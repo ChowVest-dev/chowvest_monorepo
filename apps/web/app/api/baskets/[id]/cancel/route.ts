@@ -58,7 +58,7 @@ export async function POST(
     }
 
     // Perform cancellation and reversal in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       let updatedWallet = wallet;
 
       if (hasFunds) {
