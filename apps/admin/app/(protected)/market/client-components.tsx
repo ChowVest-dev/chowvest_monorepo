@@ -15,6 +15,7 @@ import {
   updateCommodityPrice, toggleCommodityStatus,
   createCommodity, updatePlatformConfig, updateCommodity,
 } from "./actions";
+import { UploadButton } from "../../../utils/uploadthing";
 
 // ── Edit Price ─────────────────────────────────────────────────
 export function EditPriceButton({
@@ -137,7 +138,6 @@ export function EditCommodityButton({
     { key: "price",    label: "Price (₦)",   placeholder: "12000", type: "number" },
     { key: "unit",     label: "Unit",        placeholder: "kg" },
     { key: "size",     label: "Size",        placeholder: "5",     type: "number" },
-    { key: "image",    label: "Image URL",   placeholder: "https://...", span: 2 },
   ];
 
   return (
@@ -181,6 +181,33 @@ export function EditCommodityButton({
               />
             </div>
           ))}
+          <div className="col-span-2">
+            <Label className="mb-1.5 block text-sm">Commodity Image</Label>
+            <UploadButton
+              endpoint="commodityImage"
+              appearance={{
+                button: "bg-green-600 hover:bg-green-700 text-white text-sm h-9 px-4 py-2 w-full rounded-md font-medium",
+                container: "w-full flex-col items-start border border-dashed border-input rounded-md p-4 bg-muted/20",
+                allowedContent: "text-xs text-muted-foreground mt-1"
+              }}
+              content={{
+                button({ ready }) {
+                  if (ready) return "Choose Image";
+                  return "Loading...";
+                },
+                allowedContent: "Max size: 4MB"
+              }}
+              onClientUploadComplete={(res) => {
+                if (res && res.length > 0) {
+                  set("image", res[0].url);
+                  toast.success("Image uploaded!");
+                }
+              }}
+              onUploadError={(error: Error) => {
+                toast.error(`Upload error: ${error.message}`);
+              }}
+            />
+          </div>
           <div className="col-span-2">
             <Label htmlFor="edit-description" className="mb-1.5 block text-sm">Description (optional)</Label>
             <Input
@@ -312,7 +339,6 @@ export function AddCommodityButton() {
             { key: "price",    label: "Price (₦)",  placeholder: "12000", type: "number" },
             { key: "unit",     label: "Unit",       placeholder: "kg" },
             { key: "size",     label: "Size",       placeholder: "5",    type: "number" },
-            { key: "image",    label: "Image URL",  placeholder: "https://...", span: 2 },
           ].map(({ key, label, placeholder, span, type }) => (
             <div key={key} className={span === 2 ? "col-span-2" : ""}>
               <Label htmlFor={key} className="mb-1.5 block text-sm">{label}</Label>
@@ -326,6 +352,38 @@ export function AddCommodityButton() {
               />
             </div>
           ))}
+          <div className="col-span-2">
+            <Label className="mb-1.5 block text-sm">Commodity Image</Label>
+            {form.image && (
+              <div className="mb-2">
+                <img src={form.image} alt="Preview" className="h-16 w-16 object-cover rounded border" />
+              </div>
+            )}
+            <UploadButton
+              endpoint="commodityImage"
+              appearance={{
+                button: "bg-green-600 hover:bg-green-700 text-white text-sm h-9 px-4 py-2 w-full rounded-md font-medium",
+                container: "w-full flex-col items-start border border-dashed border-input rounded-md p-4 bg-muted/20",
+                allowedContent: "text-xs text-muted-foreground mt-1"
+              }}
+              content={{
+                button({ ready }) {
+                  if (ready) return "Choose Image";
+                  return "Loading...";
+                },
+                allowedContent: "Max size: 4MB"
+              }}
+              onClientUploadComplete={(res) => {
+                if (res && res.length > 0) {
+                  set("image", res[0].url);
+                  toast.success("Image uploaded!");
+                }
+              }}
+              onUploadError={(error: Error) => {
+                toast.error(`Upload error: ${error.message}`);
+              }}
+            />
+          </div>
           <div className="col-span-2">
             <Label htmlFor="description" className="mb-1.5 block text-sm">Description (optional)</Label>
             <Input
