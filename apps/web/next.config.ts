@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: ['@prisma/client'],
   transpilePackages: ["@chowvest/ui", "@chowvest/shared", "@chowvest/database"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "utfs.io",
+      },
+    ],
+  },
 };
 
 export default withSentryConfig(withPWA(nextConfig), {

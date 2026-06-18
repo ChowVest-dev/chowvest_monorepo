@@ -75,27 +75,10 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
 
   const categories = Object.keys(groupedCommodities);
 
-  // For Rice: returns high-level types ["Local", "Foreign"]
-  // For other categories: returns unique commodity names as-is
   const getHighLevelTypes = (category: string) => {
     const comms = groupedCommodities[category] || [];
-
-    if (category === "Rice") {
-      const types: { label: string; image: string; count: number }[] = [];
-      const localComms = comms.filter((c) => c.name === "Local rice");
-      const foreignComms = comms.filter((c) => c.name.includes("foreign"));
-
-      if (localComms.length > 0) {
-        types.push({ label: "Local", image: localComms[0].image || "/rice.jpg", count: localComms.length });
-      }
-      if (foreignComms.length > 0) {
-        types.push({ label: "Foreign", image: foreignComms[0].image || "/rice.jpg", count: foreignComms.length });
-      }
-      return types;
-    }
-
-    // For non-Rice categories, return unique commodity names
     const uniqueTypes = new Map<string, { label: string; image: string; count: number }>();
+    
     comms.forEach((commodity) => {
       if (!uniqueTypes.has(commodity.name)) {
         const variants = comms.filter((c) => c.name === commodity.name);
@@ -106,6 +89,7 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
         });
       }
     });
+    
     return Array.from(uniqueTypes.values());
   };
 
@@ -181,35 +165,13 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
   };
 
   const handleTypeSelect = (typeLabel: string) => {
-    // For Rice "Local" → set commodityType directly and go to size
-    // For Rice "Foreign" → go to subtype step
-    // For non-Rice → set commodityType directly and go to size
-    if (goalData.category === "Rice" && typeLabel === "Foreign") {
-      setGoalData({
-        ...goalData,
-        highLevelType: typeLabel,
-        commodityType: "",
-        selectedCommodity: null,
-      });
-      setCurrentStep("subtype");
-    } else if (goalData.category === "Rice" && typeLabel === "Local") {
-      setGoalData({
-        ...goalData,
-        highLevelType: typeLabel,
-        commodityType: "Local rice",
-        selectedCommodity: null,
-      });
-      setCurrentStep("size");
-    } else {
-      // Non-Rice categories: typeLabel IS the commodity name
-      setGoalData({
-        ...goalData,
-        highLevelType: typeLabel,
-        commodityType: typeLabel,
-        selectedCommodity: null,
-      });
-      setCurrentStep("size");
-    }
+    setGoalData({
+      ...goalData,
+      highLevelType: typeLabel,
+      commodityType: typeLabel,
+      selectedCommodity: null,
+    });
+    setCurrentStep("size");
   };
 
   const handleSubTypeSelect = (commodityName: string) => {
@@ -733,7 +695,7 @@ export function CreateGoalCard({ onGoalCreated }: CreateGoalCardProps) {
 
                 <Card className="p-6">
                   <div className="flex gap-6">
-                    <div className="w-24 h-24 rounded-lg bg-accent/50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="w-24 h-24 rounded-lg bg-accent/50 flex items-center justify-center overflow-hidden shrink-0">
                       {goalData.selectedCommodity.image ? (
                         <Image
                           src={goalData.selectedCommodity.image}
