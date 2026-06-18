@@ -71,7 +71,7 @@ export async function POST(
     }
 
     // Perform transfer in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Update wallet
       const updatedWallet = await tx.wallet.update({
         where: { id: wallet.id },

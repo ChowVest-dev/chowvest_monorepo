@@ -68,7 +68,7 @@ export default async function LogisticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {companies.reduce((acc, c) => acc + c._count.riders, 0)}
+              {companies.reduce((acc: number, c: any) => acc + c._count.riders, 0)}
             </div>
           </CardContent>
         </Card>
@@ -84,7 +84,7 @@ export default async function LogisticsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {companies.map((company) => (
+              {companies.map((company: any) => (
                 <div 
                   key={company.id} 
                   className="flex items-center justify-between p-4 border rounded-xl hover:bg-muted/50 transition-colors"

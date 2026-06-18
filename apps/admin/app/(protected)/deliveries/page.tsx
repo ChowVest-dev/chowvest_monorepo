@@ -35,8 +35,8 @@ export default async function AdminDeliveriesPage({ searchParams }: { searchPara
     })
   ]);
 
-  const activeDeliveries = deliveries.filter(d => ["PENDING", "CONFIRMED", "PREPARING", "IN_TRANSIT", "AT_CUSTOMER"].includes(d.status));
-  const historicalDeliveries = deliveries.filter(d => ["DELIVERED", "CANCELLED"].includes(d.status));
+  const activeDeliveries = deliveries.filter((d: any) => ["PENDING", "CONFIRMED", "PREPARING", "IN_TRANSIT", "AT_CUSTOMER"].includes(d.status));
+  const historicalDeliveries = deliveries.filter((d: any) => ["DELIVERED", "CANCELLED"].includes(d.status));
 
   const serializeDelivery = (d: typeof deliveries[number]) => ({
     ...d,
