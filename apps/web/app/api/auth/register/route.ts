@@ -8,12 +8,19 @@ function generateOTP() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { fullName, email, password, phoneNumber, location } = await req.json();
+    const { fullName, email, password, phoneNumber, location, acceptedTerms } = await req.json();
 
     // Validation
     if (!fullName || !email || !password || !phoneNumber || !location) {
       return NextResponse.json(
         { error: "All fields are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!acceptedTerms) {
+      return NextResponse.json(
+        { error: "You must accept the Terms of Service and Privacy Policy" },
         { status: 400 }
       );
     }
@@ -41,6 +48,8 @@ export async function POST(req: NextRequest) {
         password: hashedPassword,
         phoneNumber,
         location,
+        acceptedTermsAt: new Date(),
+        acceptedTermsVersion: "1.0",
       },
       select: {
         id: true,

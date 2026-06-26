@@ -23,6 +23,7 @@ export function SignUp({ onToggle, onVerify }: SignUpProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,6 +32,11 @@ export function SignUp({ onToggle, onVerify }: SignUpProps) {
 
     if (!fullName || !email || !password || !phoneNumber || !address) {
       setError("Please fill all fields");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError("You must accept the Terms of Service and Privacy Policy");
       return;
     }
 
@@ -43,6 +49,7 @@ export function SignUp({ onToggle, onVerify }: SignUpProps) {
         password,
         phoneNumber,
         location: address,
+        acceptedTerms: true,
       });
 
       const data = response.data;
@@ -173,25 +180,31 @@ export function SignUp({ onToggle, onVerify }: SignUpProps) {
             <input
               type="checkbox"
               id="terms"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
               required
               disabled={isLoading}
               className="mt-1"
             />
             <label htmlFor="terms" className="text-sm text-muted-foreground">
               I agree to the{" "}
-              <button
-                type="button"
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-primary hover:underline font-medium"
               >
                 Terms of Service
-              </button>{" "}
+              </a>{" "}
               and{" "}
-              <button
-                type="button"
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-primary hover:underline font-medium"
               >
                 Privacy Policy
-              </button>
+              </a>
             </label>
           </div>
 
