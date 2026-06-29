@@ -394,13 +394,13 @@ export default function LandingPage() {
               <h4 className="font-semibold mb-4">Legal</h4>
               <div className="space-y-2">
                 <Link
-                  href="#terms"
+                  href="/terms"
                   className="block text-gray-400 hover:text-white transition-colors"
                 >
                   Terms of Service
                 </Link>
                 <Link
-                  href="#privacy"
+                  href="/privacy"
                   className="block text-gray-400 hover:text-white transition-colors"
                 >
                   Privacy Policy
