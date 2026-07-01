@@ -17,15 +17,6 @@ const FEE_DEFAULTS: Record<string, number> = {
   SERVICE_FEE:            100,
 };
 
-// Simulated rider pool
-const RIDERS = [
-  { name: "Adebayo Kareem", phone: "0801-234-5678", rating: 4.9 },
-  { name: "Chinedu Okafor", phone: "0802-345-6789", rating: 4.8 },
-  { name: "Musa Ibrahim", phone: "0803-456-7890", rating: 4.7 },
-  { name: "Tunde Bakare", phone: "0804-567-8901", rating: 4.9 },
-  { name: "Emeka Nwosu", phone: "0805-678-9012", rating: 4.6 },
-];
-
 
 export async function POST(req: NextRequest) {
   try {
@@ -138,8 +129,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Simulate rider assignment
-    const rider = RIDERS[Math.floor(Math.random() * RIDERS.length)];
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { email: true, fullName: true, createdAt: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Milestone Reward logic: Check if first delivery and first 100 users
+    const pastDeliveries = await prisma.delivery.count({
+      where: { userId: session.user.id },
+    });
+    const userCount = await prisma.user.count({
+      where: { createdAt: { lte: user.createdAt } },
+    });
+    
+    const isFirst100 = userCount <= 100;
+    const isFirstDelivery = pastDeliveries === 0;
+
+    let finalDeliveryNote = deliveryNote || "";
+    if (isFirstDelivery && isFirst100) {
+      finalDeliveryNote += (finalDeliveryNote ? "\n\n" : "") + "[SYSTEM]: First Delivery Bonus! Add Knorr Maggi & Derica Sachet Tomato.";
+    }
 
     // Generate 4-digit delivery handshake PIN
     const deliveryPin = String(Math.floor(1000 + Math.random() * 9000));
@@ -162,13 +175,13 @@ export async function POST(req: NextRequest) {
           status: "PENDING",
           address,
           addressLabel: addressLabel || null,
-          deliveryNote: deliveryNote || null,
+          deliveryNote: finalDeliveryNote || null,
           deliveryOption,
           deliveryFee,
           serviceFee: SERVICE_FEE,
-          riderName: rider.name,
-          riderPhone: rider.phone,
-          riderRating: rider.rating,
+          riderName: null,
+          riderPhone: null,
+          riderRating: null,
           estimatedAt,
           requestedAt: now,
           deliveryPin,
@@ -246,11 +259,6 @@ export async function POST(req: NextRequest) {
     );
 
     // Send confirmation email
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { email: true, fullName: true },
-    });
-
     if (user) {
       await sendDeliveryStatusEmail({
         email: user.email,
@@ -262,8 +270,8 @@ export async function POST(req: NextRequest) {
         itemName,
         totalAmount: goalAmount + deliveryFee + SERVICE_FEE,
         deliveryFee,
-        riderName: rider.name,
-        riderPhone: rider.phone,
+        riderName: "Pending Assignment",
+        riderPhone: "Pending Assignment",
         estimatedTime: estimatedAt.toLocaleTimeString("en-NG", {
           hour: "2-digit",
           minute: "2-digit",

@@ -180,6 +180,19 @@ export async function POST(req: NextRequest) {
 
     const milestones = [25, 50, 75, 100];
 
+    // Check if user is in first 100 for promotions
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { createdAt: true },
+    });
+    let isFirst100 = false;
+    if (user) {
+      const userCount = await prisma.user.count({
+        where: { createdAt: { lte: user.createdAt } },
+      });
+      isFirst100 = userCount <= 100;
+    }
+
     for (const milestone of milestones) {
       if (progress >= milestone && previousProgress < milestone) {
         if (milestone === 100) {
@@ -190,6 +203,26 @@ export async function POST(req: NextRequest) {
             session.user.id,
             basket.name,
             result.basket.goalAmount.toNumber()
+          );
+        } else if (milestone === 75) {
+          if (isFirst100) {
+            const { createNotification } = await import("@/lib/notifications/create");
+            await createNotification({
+              userId: session.user.id,
+              type: "promotion",
+              title: "75% Milestone Reward! 🎁",
+              message: "Great job hitting 75%! 🎉 You've unlocked a free pack of Knorr Maggi & Derica Sachet Tomato, which will be added to your first delivery!",
+              link: "/basket-goals",
+            });
+          }
+          const { sendMilestoneNotification } = await import(
+            "@/lib/notifications/create"
+          );
+          await sendMilestoneNotification(
+            session.user.id,
+            basket.name,
+            progress,
+            milestone
           );
         } else {
           const { sendMilestoneNotification } = await import(
