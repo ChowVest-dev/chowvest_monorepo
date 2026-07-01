@@ -12,6 +12,7 @@ import Link from "next/link";
 import { AlertCircle, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { OverviewCharts } from "./overview-charts";
+import { SavingCycleStats } from "@/components/saving-cycle-stats";
 
 export default async function AdminDashboardPage() {
   const sevenDaysAgo = new Date();
@@ -27,6 +28,10 @@ export default async function AdminDashboardPage() {
     recentTransactions,
     newUsersRaw,
     goalsByCommodityRaw,
+    totalActiveValueData,
+    autoSaveEnabledCount,
+    cycleStatusDataRaw,
+    avgProgressData,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.delivery.count({
@@ -61,10 +66,29 @@ export default async function AdminDashboardPage() {
       orderBy: { _count: { id: "desc" } },
       take: 6,
     }),
+    prisma.basket.aggregate({ _sum: { currentAmount: true }, where: { status: "ACTIVE" } }),
+    prisma.basket.count({ where: { status: "ACTIVE", autoSaveEnabled: true } }),
+    prisma.basket.groupBy({ by: ["status"], _count: { id: true } }),
+    prisma.$queryRaw<{ avg_progress: number }[]>`
+      SELECT AVG("currentAmount" / NULLIF("goalAmount", 0)) as avg_progress 
+      FROM baskets 
+      WHERE status = 'ACTIVE'
+    `,
   ]);
 
   const totalWalletBalance = Number(totalWalletBalanceData._sum.balance || 0);
   const totalFees = Number(platformFeesData._sum.fee || 0);
+
+  const totalActiveValue = Number(totalActiveValueData._sum.currentAmount || 0);
+  const activeBasketsCount = cycleStatusDataRaw.find(c => c.status === "ACTIVE")?._count.id || 0;
+  const autoSaveAdoptionRate = activeBasketsCount > 0 ? (autoSaveEnabledCount / activeBasketsCount) * 100 : 0;
+  
+  const cycleStatusData = cycleStatusDataRaw.map(r => ({
+    status: r.status,
+    count: r._count.id,
+  }));
+  
+  const averageProgress = avgProgressData[0]?.avg_progress ? Number(avgProgressData[0].avg_progress) : 0;
 
   // Serialize for client charts
   const signupData = newUsersRaw.map((r) => ({
@@ -119,6 +143,17 @@ export default async function AdminDashboardPage() {
               <p className="text-xs text-muted-foreground">{sub}</p>
             </div>
           ))}
+        </div>
+
+        {/* Saving Cycle Stats */}
+        <div className="mt-2 mb-2">
+          <h2 className="text-xl font-bold tracking-tight mb-4">Saving Cycles</h2>
+          <SavingCycleStats 
+            totalActiveValue={totalActiveValue}
+            autoSaveAdoptionRate={autoSaveAdoptionRate}
+            cycleStatusData={cycleStatusData}
+            averageProgress={averageProgress}
+          />
         </div>
 
         {/* Charts */}

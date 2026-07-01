@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import axios from "axios";
+import { FirstTransferExplainer } from "./first-transfer-explainer";
 
 interface Basket {
   id: string;
@@ -33,6 +34,7 @@ export function QuickTransfer({ baskets, balance }: QuickTransferProps) {
   const [selectedBasket, setSelectedBasket] = useState("");
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [explainerOpen, setExplainerOpen] = useState(false);
   const router = useRouter();
   const activeBaskets = baskets.filter((b) => b.status === "ACTIVE");
 
@@ -75,6 +77,12 @@ export function QuickTransfer({ baskets, balance }: QuickTransferProps) {
         toast.success(
           `₦${parseFloat(amount).toLocaleString()} transferred to ${basketName} successfully!`
         );
+
+        const totalSaved = baskets.reduce((acc, b) => acc + Number(b.currentAmount), 0);
+        if (totalSaved === 0) {
+          setExplainerOpen(true);
+        }
+
         setAmount("");
         setSelectedBasket("");
         // Refresh the page to show updated data
@@ -89,6 +97,7 @@ export function QuickTransfer({ baskets, balance }: QuickTransferProps) {
   };
 
   return (
+    <>
     <Card className="p-6" data-onboarding-id="quick-transfer">
       <h3 className="text-xl font-semibold text-foreground mb-6">
         Quick Transfer
@@ -168,5 +177,11 @@ export function QuickTransfer({ baskets, balance }: QuickTransferProps) {
         </div>
       </div>
     </Card>
+
+      <FirstTransferExplainer 
+        open={explainerOpen} 
+        onOpenChange={setExplainerOpen} 
+      />
+    </>
   );
 }

@@ -371,19 +371,25 @@ export default function LandingPage() {
               <h4 className="font-semibold mb-4">Support</h4>
               <div className="space-y-2">
                 <Link
-                  href="#contact"
+                  href="https://wa.me/2347048683184"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="block text-gray-400 hover:text-white transition-colors"
                 >
                   Contact Us
                 </Link>
                 <Link
-                  href="#help"
+                  href="https://wa.me/2347048683184"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="block text-gray-400 hover:text-white transition-colors"
                 >
                   Help Center
                 </Link>
                 <Link
-                  href="#faq"
+                  href="https://wa.me/2347048683184"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="block text-gray-400 hover:text-white transition-colors"
                 >
                   FAQ
